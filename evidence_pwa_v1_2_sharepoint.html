@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Site Evidence Capture (PWA) v1.2</title>
+<meta name="theme-color" content="#0f172a" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256' viewBox='0 0 256 256'%3E%3Crect width='256' height='256' rx='56' fill='%230f172a'/%3E%3Cpath d='M44 188h168M44 68h168M64 96h40M64 160h40M132 80l24 24l36-36' stroke='%23fff' stroke-width='14' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<style>
+  :root{--bg:#0f172a;--card:#111827;--muted:#1f2937;--text:#e5e7eb;--accent:#22c55e;--danger:#ef4444;--warn:#f59e0b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(15,23,42,.95),rgba(15,23,42,.75));backdrop-filter:blur(6px);border-bottom:1px solid #111}
+  .wrap{max-width:1040px;margin:0 auto;padding:16px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .card{background:var(--card);border:1px solid #222;border-radius:16px;padding:16px}
+  button,.btn{cursor:pointer;border:1px solid #333;background:#1f2937;color:var(--text);padding:10px 14px;border-radius:12px}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .primary{background:#16a34a;border-color:#15803d}
+  .danger{background:#991b1b;border-color:#7f1d1d}
+  .warn{background:#b45309;border-color:#92400e}
+  select,input[type="number"],input[type="text"]{background:#111827;color:var(--text);border:1px solid #333;border-radius:10px;padding:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+  .thumb{position:relative;border-radius:12px;overflow:hidden;border:1px solid #333;background:#0b1220}
+  .thumb canvas{width:100%;height:auto;display:block}
+  .meta{padding:8px 10px;border-top:1px solid #222;font-size:14px}
+  .meta small{opacity:.7}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#0b4; font-size:12px; margin-left:6px}
+  .footer{opacity:.8;font-size:13px}
+  dialog{border:none;border-radius:16px;padding:0;max-width:520px;width:90%;background:#0b1220;color:var(--text)}
+  dialog header{padding:16px;border-bottom:1px solid #222}
+  dialog .content{padding:16px}
+  dialog .actions{display:flex;gap:10px;justify-content:flex-end;padding:16px;border-top:1px solid #222}
+  .count{font-variant-numeric: tabular-nums}
+  .hint{opacity:.7;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap row">
+    <div style="font-weight:700;font-size:18px;letter-spacing:.2px">Site Evidence Capture <span style="opacity:.6;font-weight:500">v1.2</span></div>
+    <div class="row" style="margin-left:auto">
+      <span class="count" id="count">0 items</span>
+      <button id="btnExportPDF" class="btn">Export PDF</button>
+      <button id="btnExportPPTX" class="btn">Export PPTX</button>
+      <button id="btnClear" class="btn danger" title="Clears local stored items">Clear</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="padding-top:14px;padding-bottom:72px">
+  <section class="card">
+    <div class="row">
+      <input id="fileInput" type="file" accept="image/*" capture="environment" style="display:none" />
+      <button id="btnSnap" class="primary">Take / Select Photo</button>
+
+      <!-- New: user-triggered precise location enable -->
+      <button id="btnEnableLoc" class="btn" title="Request precise device location">Enable Location</button>
+      <span id="locStatus" class="hint" style="margin-left:8px">Location: off</span>
+
+      <!-- Settings toggle -->
+      <button id="btnSettings" class="btn" title="Open settings" style="margin-left:8px">Settings</button>
+
+      <label>Layout:
+        <select id="layout">
+          <option value="1">1 per A4 page</option>
+          <option value="2">2 per A4 page</option>
+          <option value="4">4 per A4 page</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Slide-out settings panel -->
+    <div id="settingsPanel" style="position:fixed;right:-320px;top:72px;width:320px;max-width:90vw;height:calc(100vh - 96px);background:var(--card);border-left:1px solid #222;padding:16px;border-radius:8px 0 0 8px;box-shadow:-8px 0 24px rgba(0,0,0,.6);transition:right .25s ease;z-index:40">
+      <h3 style="margin:0 0 8px">Settings</h3>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label>Max width (px):
+          <input id="maxw" type="number" min="800" max="4096" value="1920" style="width:100%" />
+        </label>
+        <label>Margins (mm):
+          <input id="margins" type="number" min="0" max="30" value="10" style="width:100%" />
+        </label>
+        <div style="margin-top:6px"><small class="hint">These affect exports (A4 sizing)</small></div>
+      </div>
+      <div style="margin-top:12px;text-align:right">
+        <button id="btnCloseSettings" class="btn">Close</button>
+      </div>
+    </div>
+
+    <p class="footer" style="margin:8px 0 0">
+      Camera is forced to landscape: portrait images are auto-rotated. Captures stored offline (IndexedDB). Exports honour layout and A4 sizing.
+    </p>
+  </section>
+
+  <section id="gallery" class="grid" style="margin-top:14px"></section>
+</main>
+
+<!-- Description dialog -->
+<dialog id="descDialog">
+  <header><strong>Add description</strong></header>
+  <div class="content">
+    <p style="margin:0 0 8px">Describe the evidence in one or two lines (who/what/where/why).</p>
+    <textarea id="descText" rows="4" style="width:100%;resize:vertical;background:#0a0f1e;color:#fff;border:1px solid #333;border-radius:10px;padding:10px" placeholder="e.g., TP03: Sub-base compaction adjacent to gridline C–D. Roller: Bomag BW120."></textarea>
+    <div class="row" style="margin-top:8px">
+      <label>Date/time:
+        <input id="descWhen" type="datetime-local" />
+      </label>
+      <label>Technician:
+        <input id="descTech" type="text" placeholder="initials / name" />
+      </label>
+      <label>Location:
+        <input id="descLoc" type="text" placeholder="e.g., SE corner, Chainage 145" />
+      </label>
+    </div>
+    <div style="margin-top:8px">
+      <label style="display:block;font-size:13px;margin-bottom:6px">Position (device → BNG) <span class="hint" style="font-size:12px">(*) approximate</span></label>
+      <input id="descPosition" type="text" readonly style="width:100%;background:#07101a;color:#cfe; border:1px solid #223;border-radius:8px;padding:8px" />
+    </div>
+  </div>
+  <div class="actions">
+    <button id="descCancel">Cancel</button>
+    <button id="descOK" class="primary">Save</button>
+  </div>
+</dialog>
+
+<!-- Libraries (UMD) -->
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
+
+<script>
+/* ---------------- PWA: manifest + service worker (self-contained) ---------------- */
+(function bootstrapPWA(){
+  const manifest = {
+    "name": "Site Evidence Capture",
+    "short_name": "EvidenceCam",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#0f172a",
+    "orientation": "landscape",
+    "icons": [
+      {"src":"icon-192.png","sizes":"192x192","type":"image/png"},
+      {"src":"icon-512.png","sizes":"512x512","type":"image/png"},
+      {"src":"icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable any"}
+    ]
+  };
+  const manifestURL = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type:'application/json'}));
+  document.head.appendChild(Object.assign(document.createElement('link'), { rel:'manifest', href: manifestURL }));
+
+  function makeIcon(size){
+    const c=document.createElement('canvas'); c.width=c.height=size;
+    const g=c.getContext('2d');
+    g.fillStyle='#0f172a'; g.fillRect(0,0,size,size);
+    g.strokeStyle='#22c55e'; g.lineWidth=size*0.06;
+    g.strokeRect(size*0.14,size*0.14,size*0.72,size*0.72);
+    g.fillStyle='#22c55e'; g.fillRect(size*0.25,size*0.55,size*0.5,size*0.12);
+    return c.toDataURL('image/png');
+  }
+  document.head.appendChild(Object.assign(document.createElement('link'),{rel:'icon',sizes:'192x192',href:makeIcon(192)}));
+  document.head.appendChild(Object.assign(document.createElement('link'),{rel:'icon',sizes:'512x512',href:makeIcon(512)}));
+
+  const swCode = `
+  const CACHE_NAME='evidencecam-v3';
+  const ASSETS=[
+    './',
+    location.href,
+    'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js',
+    'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'
+  ];
+  self.addEventListener('install',e=>{
+    e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
+  });
+  self.addEventListener('activate',e=>{
+    e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))) .then(()=>self.clients.claim()));
+  });
+  self.addEventListener('fetch',e=>{
+    if(ASSETS.includes(e.request.url)){
+      e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
+      return;
+    }
+    e.respondWith(fetch(e.request).then(res=>{ const copy=res.clone(); caches.open(CACHE_NAME).then(c=>c.put(e.request, copy)); return res; }).catch(()=>caches.match(e.request)));
+  });
+  `;
+  const swURL = URL.createObjectURL(new Blob([swCode], {type:'text/javascript'}));
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register(swURL); }
+})();
+</script>
+
+<script>
+/* ---------------- Minimal IndexedDB ---------------- */
+const DB_NAME='evidenceDB', STORE='items';
+function idbOpen(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,1);
+    req.onupgradeneeded=()=>{ req.result.createObjectStore(STORE,{keyPath:'id',autoIncrement:true}); };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function idbAdd(obj){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).add(obj).onsuccess=e=>res(e.target.result); tx.onerror=()=>rej(tx.error); }); }
+async function idbAll(){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).getAll(); req.onsuccess=()=>res(req.result||[]); req.onerror=()=>rej(req.error); }); }
+async function idbClear(){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).clear().onsuccess=()=>res(); tx.onerror=()=>rej(tx.error); }); }
+
+/* ---------------- App state + UI refs ---------------- */
+const state={ items:[] };
+const fileInput = document.getElementById('fileInput');
+const btnSnap = document.getElementById('btnSnap');
+const gallery = document.getElementById('gallery');
+const descDialog = document.getElementById('descDialog');
+const descText = document.getElementById('descText');
+const descWhen = document.getElementById('descWhen');
+const descTech = document.getElementById('descTech');
+const descLoc = document.getElementById('descLoc');
+const descPosition = document.getElementById('descPosition');
+const descOK = document.getElementById('descOK');
+const descCancel = document.getElementById('descCancel');
+const btnExportPDF = document.getElementById('btnExportPDF');
+const btnExportPPTX = document.getElementById('btnExportPPTX');
+const btnClear = document.getElementById('btnClear');
+const layoutSel = document.getElementById('layout');
+const maxwInput = document.getElementById('maxw');
+const marginsInput = document.getElementById('margins');
+const countEl = document.getElementById('count');
+
+const btnEnableLoc = document.getElementById('btnEnableLoc');
+const locStatus = document.getElementById('locStatus');
+const btnSettings = document.getElementById('btnSettings');
+const settingsPanel = document.getElementById('settingsPanel');
+const btnCloseSettings = document.getElementById('btnCloseSettings');
+
+// location state
+let pendingCanvas=null;
+let pendingGPS=null;
+let locationEnabled = false;      // do NOT start watch automatically — user must click
+let lastKnownPos = null;          // stores last accepted high-accuracy position
+let watchId = null;
+
+// wire up missing handlers
+btnSnap.addEventListener('click', ()=> fileInput.click());
+btnSettings.addEventListener('click', ()=> { settingsPanel.style.right = (settingsPanel.style.right === '0px') ? '-320px' : '0px'; });
+btnCloseSettings.addEventListener('click', ()=> { settingsPanel.style.right = '-320px'; });
+// also allow closing when panel is open and user clicks outside (optional)
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ settingsPanel.style.right='-320px'; descDialog.close?.(); } });
+
+function fmtBNGDisplay(pos){
+  if(!pos) return '';
+  if(typeof pos.bngE !== 'undefined') return `BNG: E ${pos.bngE} N ${pos.bngN}* (≈${Math.round(pos.accuracy||3)} m)`;
+  return `Lat ${pos.lat.toFixed(6)}, Lon ${pos.lon.toFixed(6)} (≈${Math.round(pos.accuracy||3)} m)`;
+}
+
+function startWatch(){
+  if(!navigator.geolocation || watchId) return;
+  try{
+    watchId = navigator.geolocation.watchPosition(pos=>{
+      try{
+        const lat = pos.coords.latitude, lon = pos.coords.longitude, acc = pos.coords.accuracy;
+        const bng = latLonToBNG(lat, lon); // [`latLonToBNG`](c:\Users\Dan Gates\OneDrive - Brownfield Solutions Ltd\Apps\Evidence Collector\evidence_pwa_v1_2_sharepoint.html#latLonToBNG)
+        lastKnownPos = { lat, lon, accuracy: acc, bngE: bng.easting, bngN: bng.northing };
+        pendingGPS = lastKnownPos;
+        locStatus.textContent = `Location: enabled (≈${Math.round(acc||3)} m)`;
+        // update dialog field if open
+        if(descDialog.open){
+          descPosition.value = fmtBNGDisplay(lastKnownPos);
+        }
+      }catch(err){
+        console.warn('watchPosition -> BNG convert failed', err);
+      }
+    }, err=>{
+      console.warn('watchPosition error', err);
+      switch(err.code){
+        case err.PERMISSION_DENIED: locStatus.textContent = 'Location: permission denied'; break;
+        case err.POSITION_UNAVAILABLE: locStatus.textContent = 'Location: unavailable'; break;
+        case err.TIMEOUT: locStatus.textContent = 'Location: timeout'; break;
+        default: locStatus.textContent = 'Location: error';
+      }
+    }, { enableHighAccuracy:true, maximumAge:0, timeout:20000 });
+  }catch(e){
+    console.warn('startWatch failed', e);
+  }
+}
+
+function stopWatch(){
+  if(watchId !== null && navigator.geolocation){
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    locStatus.textContent = 'Location: off';
+  }
+}
+
+btnEnableLoc.addEventListener('click', async ()=>{
+  // If watch already running, stop it
+  if(watchId){
+    stopWatch();
+    locationEnabled = false;
+    btnEnableLoc.textContent = 'Enable Location';
+    return;
+  }
+
+  // User gesture: do a one‑shot getCurrentPosition to force browser permission prompt,
+  // then start watchPosition if permission is granted.
+  locStatus.textContent = 'Requesting…';
+  const pos = await requestLocationOnce();
+  if(!pos){
+    locStatus.textContent = 'Location: denied / unavailable';
+    return;
+  }
+
+  try{
+    const lat = pos.coords.latitude, lon = pos.coords.longitude, acc = pos.coords.accuracy;
+    const bng = latLonToBNG(lat, lon);
+    lastKnownPos = { lat, lon, accuracy: acc, bngE: bng.easting, bngN: bng.northing };
+    pendingGPS = lastKnownPos;
+    descPosition.value = fmtBNGDisplay(lastKnownPos);
+    locStatus.textContent = `Location: enabled (≈${Math.round(acc||3)} m)`;
+    // now start continuous watch (will not re-prompt)
+    startWatch();
+    locationEnabled = true;
+    btnEnableLoc.textContent = 'Disable Location';
+  }catch(err){
+    console.warn('Enable location failed', err);
+    locStatus.textContent = 'Location: error';
+  }
+});
+
+/* ---------------- Helpers needed by capture / UI ---------------- */
+function escapeHTML(s){ return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
+function fmtCount(n){ return `${n} item${n===1?'':'s'}`; }
+function toDataURL(canvas, quality=0.92){ return canvas.toDataURL('image/jpeg', quality); }
+
+function dataURLtoBlob(dataURL){
+  const parts = dataURL.split(',');
+  const mime = parts[0].match(/:(.*?);/)[1];
+  const binStr = atob(parts[1]);
+  const len = binStr.length;
+  const u8 = new Uint8Array(len);
+  for(let i=0;i<len;i++) u8[i]=binStr.charCodeAt(i);
+  return new Blob([u8], {type:mime});
+}
+
+/** Normalize an image file to a landscape canvas (rotate if portrait), scale to maxW */
+async function normalizeToLandscape(file, maxW){
+  // try createImageBitmap first
+  let img;
+  if(window.createImageBitmap){
+    img = await createImageBitmap(file);
+  }else{
+    // fallback to Image + object URL
+    img = await new Promise((res, rej)=>{
+      const i = new Image();
+      i.onload = ()=>res(i);
+      i.onerror = rej;
+      i.src = URL.createObjectURL(file);
+    });
+  }
+
+  let w = img.width, h = img.height;
+  const rotate = h > w;
+  const targetW = rotate ? h : w;
+  const scale = Math.min(1, (maxW || 1920) / targetW);
+  const outW = Math.round((rotate ? h : w) * scale);
+  const outH = Math.round((rotate ? w : h) * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = outW; canvas.height = outH;
+  const ctx = canvas.getContext('2d');
+
+  if(rotate){
+    // rotate 90deg clockwise: translate to right, rotate, draw
+    ctx.translate(outW, 0);
+    ctx.rotate(Math.PI/2);
+    ctx.drawImage(img, 0, 0, w, h, 0, 0, outH, outW);
+  }else{
+    ctx.drawImage(img, 0, 0, w, h, 0, 0, outW, outH);
+  }
+  return canvas;
+}
+
+/* ---------------- British National Grid conversion helpers ----------------
+   WGS84 -> OSGB36 Helmert transform + Transverse Mercator
+   returns {easting, northing}
+*/
+function deg2rad(d){ return d * Math.PI/180; }
+function latLonToBNG(lat, lon){
+  const aW = 6378137.0, bW = 6356752.3141;
+  const aA = 6377563.396, bA = 6356256.909;
+  const tx = -446.448, ty = 125.157, tz = -542.060;
+  const rxSec = -0.1502, rySec = -0.2470, rzSec = -0.8421;
+  const sppm = 20.4894;
+
+  const latR = deg2rad(lat), lonR = deg2rad(lon);
+  const e2W = (aW*aW - bW*bW) / (aW*aW);
+  const vW = aW / Math.sqrt(1 - e2W * Math.sin(latR)*Math.sin(latR));
+  const xW = vW * Math.cos(latR) * Math.cos(lonR);
+  const yW = vW * Math.cos(latR) * Math.sin(lonR);
+  const zW = (vW * (1 - e2W)) * Math.sin(latR);
+
+  const rx = rxSec / 3600 * Math.PI/180;
+  const ry = rySec / 3600 * Math.PI/180;
+  const rz = rzSec / 3600 * Math.PI/180;
+  const s = sppm * 1e-6 + 1;
+
+  const xO = tx + s*( xW + (-rz)*yW + ry*zW );
+  const yO = ty + s*( rz*xW + yW + (-rx)*zW );
+  const zO = tz + s*( (-ry)*xW + rx*yW + zW );
+
+  const e2A = (aA*aA - bA*bA) / (aA*aA);
+  let p = Math.sqrt(xO*xO + yO*yO);
+  let latA = Math.atan2(zO, p * (1 - e2A));
+  let latPrev = 1e9, vA;
+  while(Math.abs(latA - latPrev) > 1e-12){
+    latPrev = latA;
+    vA = aA / Math.sqrt(1 - e2A * Math.sin(latA)*Math.sin(latA));
+    latA = Math.atan2(zO + e2A * vA * Math.sin(latA), p);
+  }
+  const lonA = Math.atan2(yO, xO);
+
+  const lat0 = deg2rad(49.0), lon0 = deg2rad(-2.0);
+  const N0 = -100000.0, E0 = 400000.0, F0 = 0.9996012717;
+  const n = (aA - bA) / (aA + bA);
+  const nu = aA * F0 / Math.sqrt(1 - e2A * Math.sin(latA)*Math.sin(latA));
+  const rho = aA * F0 * (1 - e2A) / Math.pow(1 - e2A * Math.sin(latA)*Math.sin(latA), 1.5);
+  const eta2 = nu / rho - 1;
+
+  const M = aA * F0 * (
+    (1 + n + (5/4)*n*n + (5/4)*n*n*n) * (latA - lat0)
+    - (3*n + 3*n*n + (21/8)*n*n*n) * Math.sin(latA - lat0) * Math.cos(latA + lat0)
+    + ((15/8)*n*n + (15/8)*n*n*n) * Math.sin(2*(latA - lat0)) * Math.cos(2*(latA + lat0))
+    - (35/24)*n*n*n * Math.sin(3*(latA - lat0)) * Math.cos(3*(latA + lat0))
+  );
+
+  const I = M + N0;
+  const II = (nu/2) * Math.sin(latA) * Math.cos(latA);
+  const III = (nu/24) * Math.sin(latA) * Math.pow(Math.cos(latA),3) * (5 - Math.tan(latA)*Math.tan(latA) + 9*eta2);
+  const IIIA = (nu/720) * Math.sin(latA) * Math.pow(Math.cos(latA),5) * (61 - 58*Math.tan(latA)*Math.tan(latA) + Math.pow(Math.tan(latA),4));
+  const IV = nu * Math.cos(latA);
+  const V = (nu/6) * Math.pow(Math.cos(latA),3) * (nu/rho - Math.tan(latA)*Math.tan(latA));
+  const VI = (nu/120) * Math.pow(Math.cos(latA),5) * (5 - 18*Math.tan(latA)*Math.tan(latA) + Math.pow(Math.tan(latA),4) + 14*eta2 - 58*Math.tan(latA)*Math.tan(latA)*eta2);
+
+  const dLon = lonA - lon0;
+  const dLon2 = dLon*dLon, dLon3 = dLon2*dLon, dLon4 = dLon3*dLon, dLon5 = dLon4*dLon, dLon6 = dLon5*dLon;
+
+  const N = I + II*dLon2 + III*dLon4 + IIIA*dLon6;
+  const E = E0 + IV*dLon + V*dLon3 + VI*dLon5;
+
+  return { easting: Math.round(E), northing: Math.round(N) };
+}
+
+/* getCurrentPosition-style single read (used as quick attempt when saving) */
+function requestLocationOnce(){
+  if(!navigator.geolocation) return Promise.resolve(null);
+  return new Promise((resolve)=>{
+    navigator.geolocation.getCurrentPosition(pos=>{
+      resolve(pos);
+    }, err=>{
+      console.warn('Geolocation getCurrentPosition failed', err);
+      resolve(null);
+    }, { enableHighAccuracy:true, timeout:10000, maximumAge:0 });
+  });
+}
+
+/* Render gallery from state.items (uses item._preview canvas if present) */
+function renderGallery(){
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
+  state.items.forEach(item=>{
+    const card=document.createElement('div'); card.className='thumb';
+    const c=document.createElement('canvas'); c.width=item.w; c.height=item.h;
+    const ctx = c.getContext('2d');
+    if(item._preview) ctx.drawImage(item._preview,0,0);
+    const meta=document.createElement('div'); meta.className='meta';
+    const when=item.whenISO?new Date(item.whenISO):new Date(item.created);
+    let gpsText = '';
+    if(item.gps && typeof item.gps.bngE !== 'undefined'){
+      gpsText = ` • BNG: E ${item.gps.bngE} N ${item.gps.bngN}*`;
+    }
+    meta.innerHTML = `<div><strong>${escapeHTML(item.desc||'(no description)')}</strong><span class="badge">${item.w}×${item.h}</span></div>
+      <small>${when.toLocaleString()}${gpsText} • ${escapeHTML(item.tech||'')} • ${escapeHTML(item.loc||'')}</small>`;
+    card.appendChild(c); card.appendChild(meta);
+    gallery.appendChild(card);
+  });
+  const countEl = document.getElementById('count');
+  countEl.textContent = fmtCount(state.items.length);
+}
+
+fileInput.addEventListener('change', async (e)=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  try{
+    const maxW = parseInt(maxwInput.value,10)||1920;
+    pendingCanvas = await normalizeToLandscape(f, maxW);
+
+    // start location lookup (best-effort) and store in pendingGPS
+    pendingGPS = null;
+    // Only attempt an automatic fresh lookup if permission is already granted or user enabled location
+    try{
+      const perm = navigator.permissions ? await navigator.permissions.query({ name:'geolocation' }) : null;
+      if((perm && perm.state === 'granted') || locationEnabled){
+        // attempt a quick fresh high-accuracy read (best-effort)
+        const pos = await requestLocationOnce();
+        if(pos){
+          try{
+            const lat = pos.coords.latitude, lon = pos.coords.longitude, acc = pos.coords.accuracy;
+            const bng = latLonToBNG(lat, lon);
+            pendingGPS = { lat, lon, accuracy: acc, bngE: bng.easting, bngN: bng.northing };
+            lastKnownPos = pendingGPS;
+          }catch(err){
+            console.warn('BNG conversion failed', err);
+          }
+        }else if(lastKnownPos){
+          // fallback to last known if fresh read failed
+          pendingGPS = lastKnownPos;
+        }
+      }else{
+        // do not prompt — user must click "Enable Location"
+        pendingGPS = null;
+      }
+    }catch(e){
+      console.warn('Permission check / geolocation failed', e);
+    }
+    descText.value='';
+    const now = new Date();
+    descWhen.value = new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    // populate position field in dialog using pendingGPS or lastKnownPos (watch supplies lastKnownPos)
+    const posToShow = pendingGPS || lastKnownPos;
+    descPosition.value = fmtBNGDisplay(posToShow);
+    descDialog.showModal();
+  }catch(err){ alert('Failed to process image: '+err); }
+  finally{ fileInput.value=''; }
+});
+descCancel.addEventListener('click', ()=>{ pendingCanvas=null; pendingGPS=null; descDialog.close(); });
+descOK.addEventListener('click', async ()=>{
+  if(!pendingCanvas) { descDialog.close(); return; }
+  const dataURL = toDataURL(pendingCanvas, 0.9);
+  const item = {
+    dataURL,
+    w: pendingCanvas.width,
+    h: pendingCanvas.height,
+    desc: descText.value.trim(),
+    whenISO: descWhen.value? new Date(descWhen.value).toISOString(): null,
+    tech: descTech.value.trim(),
+    loc: descLoc.value.trim(),
+    created: new Date().toISOString(),
+    gps: pendingGPS // may be null if unavailable
+   };
+   const id = await idbAdd(item);
+   item.id=id; item._preview=pendingCanvas;
+   state.items.push(item);
+   renderGallery();
+   pendingCanvas=null; pendingGPS=null; descDialog.close();
+ });
+ 
+// do NOT start watching automatically — require user gesture
+btnEnableLoc.textContent = 'Enable Location';
+/* ---------- Startup ---------- */
+(async function init(){
+  const rows=await idbAll();
+  for(const r of rows){
+    const img = new Image();
+    await new Promise(ok=>{ img.onload=ok; img.src=r.dataURL; });
+    const c=document.createElement('canvas'); c.width=img.width; c.height=img.height;
+    c.getContext('2d').drawImage(img,0,0);
+    r._preview=c;
+  }
+  state.items = rows; renderGallery();
+})();
+btnClear.addEventListener('click', async ()=>{
+  if(!confirm('Delete all stored items from this device?')) return;
+  await idbClear(); state.items=[]; renderGallery();
+});
+
+/* ---------- Export helpers that return Blobs ---------- */
+function buildPDFBlob(){
+  if(state.items.length===0) { alert('Nothing to export.'); return null; }
+  const { jsPDF } = window.jspdf;
+  const layout = parseInt(layoutSel.value,10);
+  const marginsMM = Number(marginsInput.value)||10;
+  const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const innerW = pageW - marginsMM*2;
+  const innerH = pageH - marginsMM*2;
+  const perPage = layout;
+  const grid = layout===1 ? {rows:1, cols:1} : (layout===2 ? {rows:2, cols:1} : {rows:2, cols:2});
+  const cellW = innerW / grid.cols;
+  const cellH = innerH / grid.rows;
+  const groups=[]; for(let i=0;i<state.items.length;i+=perPage) groups.push(state.items.slice(i,i+perPage));
+  let first=true;
+  for(const group of groups){
+    if(!first) pdf.addPage(); first=false;
+    group.forEach((item, idx)=>{
+      const r = Math.floor(idx / grid.cols);
+      const c = idx % grid.cols;
+      const x0 = marginsMM + c*cellW;
+      const y0 = marginsMM + r*cellH;
+      const imgWmm = cellW;
+      const imgHmm = cellH - 14;
+      const iw = item.w, ih = item.h, ir = iw/ih;
+      let drawW = imgWmm, drawH = drawW/ir;
+      if(drawH > imgHmm){ drawH = imgHmm; drawW = drawH*ir; }
+      const dx = x0 + (cellW - drawW)/2;
+      const dy = y0 + 2 + (imgHmm - drawH)/2;
+      const format = item.dataURL.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      pdf.addImage(item.dataURL, format, dx, dy, drawW, drawH);
+      const caption = `${item.desc||''}`.trim();
+      let gpsText = '';
+      if(item.gps && typeof item.gps.bngE !== 'undefined'){
+        gpsText = ` • BNG: E ${item.gps.bngE} N ${item.gps.bngN}*`;
+      }
+      const sub = [ item.whenISO ? new Date(item.whenISO).toLocaleString() : new Date(item.created).toLocaleString(), item.tech||'', item.loc||'' ].filter(Boolean).join(' • ');
+      pdf.setFontSize(10); pdf.text(caption || '(no description)', x0+2, y0 + cellH - 8, {maxWidth: cellW-4});
+      pdf.setFontSize(8); pdf.setTextColor(160);
+      pdf.text(sub + gpsText, x0+2, y0 + cellH - 3, {maxWidth: cellW-4});
+      pdf.setTextColor(0);
+    });
+  }
+  // Add small caveat note on first page bottom
+  pdf.setFontSize(8);
+  pdf.setTextColor(160);
+  pdf.text('*BNG approximate, derived from device GPS and converted to British National Grid. Estimated accuracy ~3 m.', marginsMM, pageH - marginsMM + 4);
+  pdf.setTextColor(0);
+  return pdf.output('blob');
+}
+async function buildPPTXBlob(fileName){
+  if(state.items.length===0) { alert('Nothing to export.'); return null; }
+  const layout = parseInt(layoutSel.value,10);
+  const grid = layout===1 ? {rows:1, cols:1} : (layout===2 ? {rows:2, cols:1} : {rows:2, cols:2});
+
+  let pptx;
+  // Try to load local template "Master PPT.pptx" from same folder as the HTML.
+  try{
+    const tplResp = await fetch('./Master PPT.pptx');
+    if(tplResp.ok){
+      const tplAB = await tplResp.arrayBuffer();
+      if(typeof PptxGenJS.load === 'function'){
+        // library supports loading an existing pptx
+        pptx = await PptxGenJS.load(tplAB);
+      }else{
+        // fallback if load API not available
+        pptx = new PptxGenJS();
+      }
+    }else{
+      // template not found -> new presentation
+      pptx = new PptxGenJS();
+    }
+  }catch(err){
+    console.warn('Template load failed, creating new PPTX:', err);
+    pptx = new PptxGenJS();
+  }
+
+  // Ensure A4 portrait layout if the created object doesn't already have it
+  try{
+    if(!pptx.layout || pptx.layout === 'LAYOUT_UNDEFINED'){
+      pptx.defineLayout({ name: 'A4PORTRAIT', width: 8.27, height: 11.69 });
+      pptx.layout = 'A4PORTRAIT';
+    }
+  }catch(e){ /* ignore if template handles layout */ }
+
+  const slideW = 8.27, slideH = 11.69;
+  const marginIn = 0.4;
+  const innerW = slideW - marginIn*2;
+  const innerH = slideH - marginIn*2;
+  const cellW = innerW / grid.cols;
+  const cellH = innerH / grid.rows;
+  const perSlide = layout;
+  const groups=[]; for(let i=0;i<state.items.length;i+=perSlide) groups.push(state.items.slice(i,i+perSlide));
+
+  let firstSlide = true;
+  for(const group of groups){
+    const slide = pptx.addSlide();
+    if(firstSlide){
+      // add caveat note on first slide footer
+      slide.addText('*BNG approximate, derived from device GPS and converted to British National Grid. Estimated accuracy ~3 m.', { x:0.4, y: slideH - 0.4, w: slideW - 0.8, fontSize:8, color:'707070', align:'left' });
+      firstSlide = false;
+    }
+    group.forEach((item, idx)=>{
+      const r = Math.floor(idx / grid.cols);
+      const c = idx % grid.cols;
+      const x = marginIn + c*cellW;
+      const y = marginIn + r*cellH;
+      const boxW = cellW; const boxH = cellH - 0.3;
+      const ir = item.w / item.h;
+      let w = boxW, h = w / ir;
+      if(h > boxH){ h = boxH; w = h * ir; }
+      const ix = x + (boxW - w)/2;
+      const iy = y + (boxH - h)/2;
+      slide.addImage({ data: item.dataURL, x: ix, y: iy, w, h });
+      const caption = (item.desc||'(no description)');
+      let gpsText = '';
+      if(item.gps && typeof item.gps.bngE !== 'undefined'){
+        gpsText = ` • BNG: E ${item.gps.bngE} N ${item.gps.bngN}*`;
+      }
+      const sub = [ item.whenISO ? new Date(item.whenISO).toLocaleString() : new Date(item.created).toLocaleString(), item.tech||'', item.loc||'' ].filter(Boolean).join(' • ');
+      slide.addText(caption, { x:x+0.05, y:y+boxH+0.02, w:boxW-0.1, h:0.18, fontSize:10 });
+      slide.addText(sub + gpsText, { x:x+0.05, y:y+boxH+0.2, w:boxW-0.1, h:0.18, fontSize:8, color:'707070' });
+    });
+  }
+  // Try to get a blob; if that fails, fall back to writeFile/save to trigger download
+  try{
+    const blob = await pptx.write('blob');
+    return blob;
+  }catch(err){
+    console.warn('pptx write(blob) failed, trying fallback writeFile/save', err);
+    try{
+      const name = fileName || `evidence_${new Date().toISOString().slice(0,10)}_${layoutSel.value}ppA4.pptx`;
+      if(typeof pptx.writeFile === 'function'){
+        await pptx.writeFile({ fileName: name });
+        return null; // download handled
+      }else if(typeof pptx.save === 'function'){
+        await pptx.save(name);
+        return null;
+      }else{
+        throw err;
+      }
+    }catch(e){
+      console.error('pptx fallback failed', e);
+      throw e;
+    }
+  }
+}
+/* local downloads for manual export */
+btnExportPDF.addEventListener('click', ()=>{
+  const blob = buildPDFBlob(); if(!blob) return;
+  const a=document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `evidence_${new Date().toISOString().slice(0,10)}_${layoutSel.value}ppA4.pdf`;
+  a.click();
+});
+btnExportPPTX.addEventListener('click', async ()=>{
+  const fileName = `evidence_${new Date().toISOString().slice(0,10)}_${layoutSel.value}ppA4.pptx`;
+  const blob = await buildPPTXBlob(fileName);
+  if(!blob) return; // fallback handled download
+  const a=document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+});
+
+</script>
+</body>
+</html>
