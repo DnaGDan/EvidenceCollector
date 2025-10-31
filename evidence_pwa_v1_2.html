@@ -950,6 +950,19 @@ fileInput.addEventListener('change', async (e)=>{
 descCancel.addEventListener('click', ()=>{ pendingCanvas=null; pendingGPS=null; descDialog.close(); });
 descOK.addEventListener('click', async ()=>{
   if(!pendingCanvas) { descDialog.close(); return; }
+
+  // Ensure we have an active session to save into. Create one if needed.
+  if(!activeSessionId || !sessions[activeSessionId]){
+    try{
+      // createNewSession activates the session and returns its id
+      activeSessionId = await createNewSession();
+    }catch(err){
+      console.error('Failed to create a new collection/session', err);
+      alert('Unable to save image: could not create a collection.');
+      return;
+    }
+  }
+
   const dataURL = toDataURL(pendingCanvas, 0.9);
   const item = {
     dataURL,
@@ -961,14 +974,22 @@ descOK.addEventListener('click', async ()=>{
     loc: '', // free-text location removed — keep empty, GPS stored under gps
     created: new Date().toISOString(),
     gps: pendingGPS // may be null if unavailable
-   };
-   const id = await idbAdd(item);
-   item.id=id; item._preview=pendingCanvas;
-   state.items.push(item);
-   saveGlobalsToSession(activeSessionId); // Persist immediately after adding
-   renderGallery();
-   pendingCanvas=null; pendingGPS=null; descDialog.close();
- });
+  };
+
+  // Legacy store write
+  const id = await idbAdd(item);
+  item.id = id;
+  item._preview = pendingCanvas;
+
+  // Add to in-memory state and persist into the active session
+  state.items.push(item);
+  saveGlobalsToSession(activeSessionId); // Persist immediately after adding
+  renderGallery();
+
+  pendingCanvas = null;
+  pendingGPS = null;
+  descDialog.close();
+});
  
 // do NOT start watching automatically — require user gesture
 async function openCollectionsPanel() {
@@ -1636,5 +1657,5 @@ collectionTitleInput.addEventListener('input', () => {ollectionTitleInput.addEve
 });
 </script>t>
 </body>
-</html></html>
+</html>
 
