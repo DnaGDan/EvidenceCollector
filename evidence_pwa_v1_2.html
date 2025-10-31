@@ -322,7 +322,7 @@
     </div>
 
     <!-- Slide-out settings panel -->
-    <div id="settingsPanel" style="position:fixed;right:-320px;top:72px;width:320px;max-width:90vw;height:calc(100vh - 96px);background:var(--card);border-left:1px solid #222;padding:16px;border-radius:8px 0 0 8px;box-shadow:-8px 0 24px rgba(0,0,0,.6);transition:right .25s ease;z-index=40">
+    <div id="settingsPanel" style="position:fixed;right:-320px;top:72px;width:320px;max-width:90vw;height:calc(100vh - 96px);background:var(--card);border-left:1px solid #222;padding:16px;border-radius:8px 0 0 8px;box-shadow:-8px 0 24px rgba(0,0,0,.6);transition:right .25s ease;z-index:40;">
       <h3 style="margin:0 0 8px">Settings</h3>
       <div style="display:flex;flex-direction:column;gap:10px">
         <label>Max width (px):
@@ -1617,40 +1617,41 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
-// Save client, project title, and photographer to state on input changeo state on input change
-clientNameInput.addEventListener('input', () => {> {
-  state.client = clientNameInput.value.trim();
-  if (activeSessionId && sessions[activeSessionId]) {{
-    sessions[activeSessionId].client = state.client;sionId].client = state.client;
-    persistSession(sessions[activeSessionId]);
-  }
-});});
-
-projectTitleInput.addEventListener('input', () => { {
-  state.project = projectTitleInput.value.trim();
+// Save client, project title, and photographer to state on input change
+clientNameInput.addEventListener('input', () => {
+  state.client = (clientNameInput.value || '').trim();
   if (activeSessionId && sessions[activeSessionId]) {
-    sessions[activeSessionId].project = state.project;sionId].project = state.project;
-    persistSession(sessions[activeSessionId]);
-  }
-});});
-
-photographerNameInput.addEventListener('input', () => {
-  state.photographer = photographerNameInput.value.trim();im();
-  if (activeSessionId && sessions[activeSessionId]) {
-    sessions[activeSessionId].photographer = state.photographer;sionId].photographer = state.photographer;
-    persistSession(sessions[activeSessionId]);
-  }
-});});
-
-collectionTitleInput.addEventListener('input', () => {ollectionTitleInput.addEventListener('input', () => {
- 
-  if (activeSessionId && sessions[activeSessionId]) {
-    sessions[activeSessionId].name = collectionTitleInput.value.trim();sionId].name = collectionTitleInput.value.trim();
-    persistSession(sessions[activeSessionId]);
-    updateTabsUI();
+    sessions[activeSessionId].client = state.client;
+    persistSession(sessions[activeSessionId]).catch(() => {});
   }
 });
-</script>t>
+
+projectTitleInput.addEventListener('input', () => {
+  state.project = (projectTitleInput.value || '').trim();
+  if (activeSessionId && sessions[activeSessionId]) {
+    sessions[activeSessionId].project = state.project;
+    persistSession(sessions[activeSessionId]).catch(() => {});
+  }
+});
+
+photographerNameInput.addEventListener('input', () => {
+  state.photographer = (photographerNameInput.value || '').trim();
+  if (activeSessionId && sessions[activeSessionId]) {
+    sessions[activeSessionId].photographer = state.photographer;
+    persistSession(sessions[activeSessionId]).catch(() => {});
+  }
+});
+
+collectionTitleInput.addEventListener('input', () => {
+  const name = (collectionTitleInput.value || '').trim();
+  if (activeSessionId && sessions[activeSessionId]) {
+    sessions[activeSessionId].name = name || sessions[activeSessionId].name;
+    persistSession(sessions[activeSessionId]).catch(() => {});
+    // update the sessions UI to reflect the new name
+    renderSessions();
+  }
+});
+</script>
 </body>
 </html>
 
