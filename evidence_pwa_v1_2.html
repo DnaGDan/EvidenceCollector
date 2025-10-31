@@ -34,17 +34,266 @@
   dialog .actions{display:flex;gap:10px;justify-content:flex-end;padding:16px;border-top:1px solid #222}
   .count{font-variant-numeric: tabular-nums}
   .hint{opacity:.7;font-size:12px}
+
+  /* Slide-out panel for sessions */
+  .section {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(360px, 92vw);
+    height: 100%;
+    transition: transform 0.28s ease; /* Smooth slide-in/out */
+    z-index: 1000;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+    border-right: 1px solid #222;
+    overflow: auto;
+    background: var(--card);
+    padding: 16px;
+    transform: translateX(-110%); /* Hidden by default */
+  }
+  .section.open {
+    transform: translateX(0); /* Slide in when open */
+  }
+  .tab-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .tab:hover {
+    background: #1f2937;
+  }
+  .tab.active {
+    background: #15803d;
+    color: #fff;
+  }
+  .close {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  /* Session Manager styles */
+  .sessions-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(360px, 92vw);
+    height: 100%;
+    background: var(--card, #1a1a2b);
+    color: var(--fg, #eef4ff);
+    border-right: 1px solid var(--border, #444c6a);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    padding: 16px;
+    overflow-y: auto;
+    z-index: 1000;
+    transform: translateX(-110%); /* Hidden by default */
+    transition: transform 0.28s ease;
+  }
+  .sessions-panel.open {
+    transform: translateX(0); /* Visible when open */
+  }
+  body.sessions-open #sessionsToggle {
+    opacity: 1; /* Ensure the button is fully visible */
+    pointer-events: auto; /* Allow interaction */
+  }
+  .sessions-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sessions-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .flex-spacer {
+    flex: 1;
+  }
+  .sessions-hint {
+    margin-top: 6px;
+    font-size: 0.9rem;
+    color: var(--muted, #8b93b8);
+  }
+  .sessions-new-btn-row {
+    margin-top: 8px;
+  }
+  .sessions-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+  }
+  .session-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border, #444c6a);
+    background: var(--card, #1a1a2b);
+    color: var(--fg, #eef4ff);
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+  }
+  .session-tab.active {
+    outline: 3px solid var(--focus-ring, #7aa9f6);
+    outline-offset: 0;
+  }
+  .session-close-btn {
+    background: transparent;
+    border: 0;
+    color: var(--muted, #8b93b8);
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+  .session-summary-chip {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted, #8b93b8);
+    border: 1px solid var(--border, #444c6a);
+    background: rgba(127, 146, 190, 0.08);
+    border-radius: 999px;
+    padding: 2px 8px;
+    max-width: 40vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Update styles for the renamed Collections panel */
+  .collections-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(360px, 92vw);
+    height: 100%;
+    background: var(--card, #1a1a2b);
+    color: var(--fg, #eef4ff);
+    border-right: 1px solid var(--border, #444c6a);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    padding: 16px;
+    overflow-y: auto;
+    z-index: 1000;
+    transform: translateX(-110%); /* Hidden by default */
+    transition: transform 0.28s ease;
+  }
+  .collections-panel.open {
+    transform: translateX(0); /* Slide in when open */
+  }
+  body.collections-open #collectionsToggle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Collection Parameters slide-out (left) */
+  .params-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(360px, 92vw);
+    height: 100%;
+    background: var(--card);
+    color: var(--text);
+    border-right: 1px solid #222;
+    box-shadow: 8px 0 24px rgba(0,0,0,0.6);
+    padding: 16px;
+    transform: translateX(-110%);
+    transition: transform 0.28s ease;
+    z-index: 1200;
+    overflow-y: auto;
+  }
+  .params-panel.open { transform: translateX(0); }
+  .params-panel h3 { margin:0 0 8px; font-size:1rem; font-weight:600; }
+  .params-panel .field { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+
+  /* location button state colours */
+  .btn.loc-on { background:#16a34a !important; border-color:#15803d !important; color:#fff; }
+  .btn.loc-off { background:#991b1b !important; border-color:#7f1d1d !important; color:#fff; }
+
+  /* make svg inside control inherit button foreground */
+  .btn svg { vertical-align: middle; fill: none; stroke: currentColor; }
+
+  /* icon-only button style (tight square for header icons) */
+  .btn.icon-btn { width:40px; height:40px; padding:6px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; }
+
+  /* export button: inline icon + label, slightly tighter */
+  .btn.export { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:12px; font-weight:600; }
+  .btn.export svg { width:18px; height:18px; }
+
+  /* group two buttons so they look related (export + settings) */
+  .btn.group-left { border-top-right-radius:0; border-bottom-right-radius:0; margin-left:8px; }
+  .btn.group-right { border-top-left-radius:0; border-bottom-left-radius:0; margin-left:0; border-left:1px solid rgba(0,0,0,0.25); }
+
+  /* keep grouped header buttons together on small screens */
+  .btn-group {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    align-items: center;
+    white-space: nowrap;
+  }
+  .btn-group .btn {
+    flex: 0 0 auto; /* do not grow or shrink */
+  }
 </style>
 </head>
 <body>
 <header>
   <div class="wrap row">
     <div style="font-weight:700;font-size:18px;letter-spacing:.2px">Site Evidence Capture <span style="opacity:.6;font-weight:500">v1.2</span></div>
+    <div id="tabsSummary" style="margin-left: 16px; font-weight: 500; opacity: 0.8;"></div>
+    <!-- inside header controls: add settings cog button (keeps id btnSettings) -->
     <div class="row" style="margin-left:auto">
       <span class="count" id="count">0 items</span>
-      <button id="btnExportPDF" class="btn">Export PDF</button>
-      <button id="btnExportPPTX" class="btn">Export PPTX</button>
-      <button id="btnClear" class="btn danger" title="Clears local stored items">Clear</button>
+
+      <!-- Location icon (moved from middle). id preserved for JS -->
+      <button id="btnEnableLoc" class="btn loc-off icon-btn" title="Enable location" aria-pressed="false" style="margin-right:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C8.686 2 6 4.686 6 8c0 5.25 6 12 6 12s6-6.75 6-12c0-3.314-2.686-6-6-6z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="12" cy="8" r="2.2" stroke="currentColor" stroke-width="1.2" fill="none"/>
+        </svg>
+      </button>
+
+      <button id="collectionsToggle" class="btn">Collections</button>
+
+      <!-- Group Export + Settings so they never wrap apart -->
+      <span class="btn-group" style="margin-left:8px">
+        <button id="btnExportPPTX" class="btn danger export group-left" title="Export PPTX" aria-label="Export PPTX">
+          <!-- slideshow/presentation icon -->
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="14" rx="2" />
+            <path d="M8 9h8M8 13h5" />
+            <path d="M12 18v3" />
+          </svg>
+          <span>PPTX</span>
+        </button>
+        <button id="btnSettings" class="btn group-right" title="Settings" aria-label="Settings">
+          <!-- inline cog SVG -->
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" stroke="#e5e7eb" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09c.73 0 1.38-.39 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 0 1 6.4 3.7l.06.06c.47.47 1.1.7 1.75.62.62-.08 1.18-.48 1.4-1.06.2-.54.7-.94 1.28-1.06L12 2.5c.36 0 .72.1 1.03.28.58.28 1.03.78 1.22 1.4.22.68.78 1.09 1.4 1.17.65.08 1.28-.15 1.75-.62l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06c-.47.47-.7 1.1-.62 1.75.08.62.48 1.18 1.06 1.4.68.22 1.09.78 1.17 1.4V11a2 2 0 0 1 0 4h-.09c-.73 0-1.38.39-1.51 1z" stroke="#e5e7eb" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </span>
     </div>
   </div>
 </header>
@@ -55,34 +304,41 @@
       <input id="fileInput" type="file" accept="image/*" capture="environment" style="display:none" />
       <button id="btnSnap" class="primary">Take / Select Photo</button>
 
-      <!-- New: user-triggered precise location enable -->
-      <button id="btnEnableLoc" class="btn" title="Request precise device location">Enable Location</button>
-      <span id="locStatus" class="hint" style="margin-left:8px">Location: off</span>
+      <!-- location control moved to header; status text removed (indicator is the icon colour) -->
 
-      <!-- Settings toggle -->
-      <button id="btnSettings" class="btn" title="Open settings" style="margin-left:8px">Settings</button>
+      <!-- Moved here: Parameters and Clear Collection -->
+      <button id="paramsToggle" class="btn" title="Open collection parameters" style="margin-left:8px">Params</button>
+      <button id="btnClear" class="btn danger" title="Clears all items in the current collection" style="margin-left:8px">Clear Collection</button>
 
-      <label>Layout:
-        <select id="layout">
-          <option value="1">1 per A4 page</option>
-          <option value="2">2 per A4 page</option>
-          <option value="4">4 per A4 page</option>
-        </select>
-      </label>
-      <label>Orientation:
-        <select id="orientation">
-          <option value="portrait" selected>Portrait (A4)</option>
-          <option value="landscape">Landscape (A4)</option>
-        </select>
-      </label>
+      <!-- layout/orientation moved into Settings panel -->
+      <input id="collectionTitle" type="hidden" value="Site Evidence Photos" />
+    </div>
+
+    <!-- New: Client, Project Title, and Photographer fields (moved to slide-out panel — keep hidden fields for compatibility) -->
+    <div style="display:none;">
+      <input id="clientName" type="hidden" value="" />
+      <input id="projectTitle" type="hidden" value="" />
+      <input id="photographerName" type="hidden" value="" />
     </div>
 
     <!-- Slide-out settings panel -->
-    <div id="settingsPanel" style="position:fixed;right:-320px;top:72px;width:320px;max-width:90vw;height:calc(100vh - 96px);background:var(--card);border-left:1px solid #222;padding:16px;border-radius:8px 0 0 8px;box-shadow:-8px 0 24px rgba(0,0,0,.6);transition:right .25s ease;z-index:40">
+    <div id="settingsPanel" style="position:fixed;right:-320px;top:72px;width:320px;max-width:90vw;height:calc(100vh - 96px);background:var(--card);border-left:1px solid #222;padding:16px;border-radius:8px 0 0 8px;box-shadow:-8px 0 24px rgba(0,0,0,.6);transition:right .25s ease;z-index=40">
       <h3 style="margin:0 0 8px">Settings</h3>
       <div style="display:flex;flex-direction:column;gap:10px">
         <label>Max width (px):
           <input id="maxw" type="number" min="800" max="4096" value="1920" style="width:100%" />
+        </label>
+        <label>Layout:
+          <select id="layout" style="width:100%">
+            <option value="2">2 per A4 page</option>
+            <option value="4" selected>4 per A4 page</option>
+          </select>
+        </label>
+        <label>Orientation:
+          <select id="orientation" style="width:100%">
+            <option value="portrait">Portrait (A4)</option>
+            <option value="landscape" selected>Landscape (A4)</option>
+          </select>
         </label>
         <label>Margins (mm):
           <input id="margins" type="number" min="0" max="30" value="10" style="width:100%" />
@@ -110,7 +366,8 @@
     <textarea id="descText" rows="4" style="width:100%;resize:vertical;background:#0a0f1e;color:#fff;border:1px solid #333;border-radius:10px;padding:10px" placeholder="e.g., TP03: Sub-base compaction adjacent to gridline C–D. Roller: Bomag BW120."></textarea>
     <div class="row" style="margin-top:8px">
       <label>Date/time:
-        <input id="descWhen" type="datetime-local" />
+        <!-- include seconds support for datetime-local -->
+        <input id="descWhen" type="datetime-local" step="1" />
       </label>
       <label>Technician:
         <input id="descTech" type="text" placeholder="initials / name" />
@@ -128,9 +385,55 @@
   </div>
 </dialog>
 
+<!-- Rename the slide-out panel for managing collections -->
+<div id="collections" class="collections-panel" aria-hidden="true">
+  <div class="collections-header-row" style="display:flex;align-items:center;gap:8px;">
+    <button id="collectionsClose" class="btn" type="button">Close</button>
+    <h2 class="collections-title" style="margin:0;font-size:1rem;font-weight:600;">Collections</h2>
+    <div class="flex-spacer" style="flex:1;"></div>
+  </div>
+  <p class="collections-hint">Manage active collections. Click one to switch to it.</p>
+  <div class="collections-new-btn-row" style="margin-top:8px;">
+    <button id="newCollectionBtn" class="btn" type="button">＋ New Collection</button>
+  </div>
+  <ul id="collectionsList" class="collections-list" style="list-style:none;padding:0;margin-top:10px;"></ul>
+</div>
+
+<!-- Add the params panel markup (place near other slide-out panels) -->
+<div id="paramsPanel" class="params-panel" aria-hidden="true">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <button id="paramsClose" class="btn" type="button">Close</button>
+    <h3 style="margin:0">Collection Parameters</h3>
+  </div>
+
+  <div style="margin-top:8px">
+    <div class="field">
+      <label style="font-size:12px">Collection name</label>
+      <input id="params_collectionTitle" type="text" placeholder="Collection name" />
+    </div>
+    <div class="field">
+      <label style="font-size:12px">Client</label>
+      <input id="params_clientName" type="text" placeholder="Client" />
+    </div>
+    <div class="field">
+      <label style="font-size:12px">Project Title</label>
+      <input id="params_projectTitle" type="text" placeholder="Project title" />
+    </div>
+    <div class="field">
+      <label style="font-size:12px">Photographer</label>
+      <input id="params_photographerName" type="text" placeholder="Photographer" />
+    </div>
+    <div style="margin-top:12px;text-align:right">
+      <button id="paramsSave" class="btn primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Active session summary -->
+<div id="activeSessionSummary" class="session-summary-chip"></div>
+
 <!-- Libraries (UMD) -->
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
 <!-- include the helper as an ES module so addBottomRightTable is available -->
 <script type="module" src="./pptx_table.js"></script>
 
@@ -167,12 +470,12 @@
   document.head.appendChild(Object.assign(document.createElement('link'),{rel:'icon',sizes:'512x512',href:makeIcon(512)}));
 
   const swCode = `
-  const CACHE_NAME='evidencecam-v3';
+  const CACHE_NAME='evidencecam-v4';
   const ASSETS=[
     './',
-    location.href,
-    'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js',
-    'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'
+    './pptx_table.js',
+    './brownfield_logo.png',
+    'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'
   ];
   self.addEventListener('install',e=>{
     e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
@@ -181,11 +484,24 @@
     e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))) .then(()=>self.clients.claim()));
   });
   self.addEventListener('fetch',e=>{
-    if(ASSETS.includes(e.request.url)){
-      e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
-      return;
-    }
-    e.respondWith(fetch(e.request).then(res=>{ const copy=res.clone(); caches.open(CACHE_NAME).then(c=>c.put(e.request, copy)); return res; }).catch(()=>caches.match(e.request)));
+    e.respondWith(
+      caches.match(e.request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(e.request).then(networkResponse => {
+          // Caching for non-asset requests (e.g. future API calls)
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(e.request, responseToCache);
+          });
+          return networkResponse;
+        }).catch(() => {
+          // Fallback for failed fetch, e.g. a generic offline page/image
+          // For now, just fails, but could return a placeholder from cache.
+        });
+      })
+    );
   });
   `;
   const swURL = URL.createObjectURL(new Blob([swCode], {type:'text/javascript'}));
@@ -195,24 +511,44 @@
 
 <script>
 /* ---------------- Minimal IndexedDB ---------------- */
-const DB_NAME='evidenceDB', STORE='items';
+const DB_NAME='evidenceDB', STORE='items', SESSIONS_STORE='sessions';
 function idbOpen(){
   return new Promise((resolve,reject)=>{
-    const req=indexedDB.open(DB_NAME,1);
-    req.onupgradeneeded=()=>{ req.result.createObjectStore(STORE,{keyPath:'id',autoIncrement:true}); };
-    req.onsuccess=()=>resolve(req.result);
-    req.onerror=()=>reject(req.error);
+    const req = indexedDB.open(DB_NAME, 2); // DB version 2
+    req.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      // create legacy items store if missing
+      if (!db.objectStoreNames.contains(STORE)) {
+        db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+      }
+      // create sessions store if missing (autoIncrement per spec)
+      if (!db.objectStoreNames.contains(SESSIONS_STORE)) {
+        db.createObjectStore(SESSIONS_STORE, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+    req.onblocked = () => console.warn('IndexedDB open blocked - close other tabs using this site to upgrade the database.');
   });
 }
 async function idbAdd(obj){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).add(obj).onsuccess=e=>res(e.target.result); tx.onerror=()=>rej(tx.error); }); }
 async function idbAll(){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).getAll(); req.onsuccess=()=>res(req.result||[]); req.onerror=()=>rej(req.error); }); }
-async function idbClear(){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).clear().onsuccess=()=>res(); tx.onerror=()=>rej(tx.error); }); }
+
+// New helpers for sessions store
+async function idbAddSession(session){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(SESSIONS_STORE,'readwrite'); tx.objectStore(SESSIONS_STORE).put(session).onsuccess=()=>res(); tx.onerror=()=>rej(tx.error); }); }
+async function idbGetSession(id){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(SESSIONS_STORE,'readonly'); const req=tx.objectStore(SESSIONS_STORE).get(id); req.onsuccess=()=>res(req.result||null); req.onerror=()=>rej(req.error); }); }
+async function idbAllSessions(){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(SESSIONS_STORE,'readonly'); const req=tx.objectStore(SESSIONS_STORE).getAll(); req.onsuccess=()=>res(req.result||[]); req.onerror=()=>rej(req.error); }); }
+async function idbDeleteSession(id){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(SESSIONS_STORE,'readwrite'); tx.objectStore(SESSIONS_STORE).delete(id).onsuccess=()=>res(); tx.onerror=()=>rej(tx.error); }); }
 
 /* ---------------- App state + UI refs ---------------- */
-const state={ items:[] };
+const state = { items: [], client: '', project: '', photographer: '' }; // Add photographer to state
 const fileInput = document.getElementById('fileInput');
 const btnSnap = document.getElementById('btnSnap');
 const gallery = document.getElementById('gallery');
+const collectionTitleInput = document.getElementById('collectionTitle');
+const clientNameInput = document.getElementById('clientName'); // New
+const projectTitleInput = document.getElementById('projectTitle'); // New
+const photographerNameInput = document.getElementById('photographerName'); // New
 const descDialog = document.getElementById('descDialog');
 const descText = document.getElementById('descText');
 const descWhen = document.getElementById('descWhen');
@@ -220,7 +556,6 @@ const descTech = document.getElementById('descTech');
 const descPosition = document.getElementById('descPosition');
 const descOK = document.getElementById('descOK');
 const descCancel = document.getElementById('descCancel');
-const btnExportPDF = document.getElementById('btnExportPDF');
 const btnExportPPTX = document.getElementById('btnExportPPTX');
 const btnClear = document.getElementById('btnClear');
 const layoutSel = document.getElementById('layout');
@@ -230,7 +565,6 @@ const marginsInput = document.getElementById('margins');
 const countEl = document.getElementById('count');
 
 const btnEnableLoc = document.getElementById('btnEnableLoc');
-const locStatus = document.getElementById('locStatus');
 const btnSettings = document.getElementById('btnSettings');
 const settingsPanel = document.getElementById('settingsPanel');
 const btnCloseSettings = document.getElementById('btnCloseSettings');
@@ -270,25 +604,23 @@ function startWatch(){
         const bng = latLonToBNG(lat, lon); // latLonToBNG()
         lastKnownPos = { lat, lon, accuracy: acc, bngE: bng.easting, bngN: bng.northing };
         pendingGPS = lastKnownPos;
-        locStatus.textContent = `Location: enabled (≈${Math.round(acc||3)} m)`;
         // update dialog field if open
         if(descDialog.open){
           descPosition.value = fmtBNGDisplay(lastKnownPos);
         }
+        // visual indicator & tooltip include accuracy
+        setLocationButtonState(true, Math.round(acc||0));
       }catch(err){
         console.warn('watchPosition -> BNG convert failed', err);
       }
     }, err=>{
       console.warn('watchPosition error', err);
-      switch(err.code){
-        case err.PERMISSION_DENIED: locStatus.textContent = 'Location: permission denied'; break;
-        case err.POSITION_UNAVAILABLE: locStatus.textContent = 'Location: unavailable'; break;
-        case err.TIMEOUT: locStatus.textContent = 'Location: timeout'; break;
-        default: locStatus.textContent = 'Location: error';
-      }
+      // turn off visual indicator on errors (permission/unavailable/etc)
+      setLocationButtonState(false);
     }, { enableHighAccuracy:true, maximumAge:0, timeout:20000 });
   }catch(e){
     console.warn('startWatch failed', e);
+    setLocationButtonState(false);
   }
 }
 
@@ -296,7 +628,8 @@ function stopWatch(){
   if(watchId !== null && navigator.geolocation){
     navigator.geolocation.clearWatch(watchId);
     watchId = null;
-    locStatus.textContent = 'Location: off';
+    // visual reset: icon shows disabled
+    setLocationButtonState(false);
   }
 }
 
@@ -305,16 +638,17 @@ btnEnableLoc.addEventListener('click', async ()=>{
   if(watchId){
     stopWatch();
     locationEnabled = false;
-    btnEnableLoc.textContent = 'Enable Location';
+    setLocationButtonState(false);
     return;
   }
 
   // User gesture: do a one‑shot getCurrentPosition to force browser permission prompt,
   // then start watchPosition if permission is granted.
-  locStatus.textContent = 'Requesting…';
+  // show ephemeral request state in button tooltip
+  btnEnableLoc.setAttribute('title','Requesting…');
   const pos = await requestLocationOnce();
   if(!pos){
-    locStatus.textContent = 'Location: denied / unavailable';
+    setLocationButtonState(false, 'Denied / unavailable');
     return;
   }
 
@@ -324,15 +658,36 @@ btnEnableLoc.addEventListener('click', async ()=>{
     lastKnownPos = { lat, lon, accuracy: acc, bngE: bng.easting, bngN: bng.northing };
     pendingGPS = lastKnownPos;
     descPosition.value = fmtBNGDisplay(lastKnownPos);
-    locStatus.textContent = `Location: enabled (≈${Math.round(acc||3)} m)`;
     // now start continuous watch (will not re-prompt)
     startWatch();
     locationEnabled = true;
-    btnEnableLoc.textContent = 'Disable Location';
+    setLocationButtonState(true, Math.round(acc||0));
   }catch(err){
     console.warn('Enable location failed', err);
-    locStatus.textContent = 'Location: error';
+    setLocationButtonState(false, 'Error');
   }
+});
+
+/* helper to set location button visual state (green when enabled, red when off) */
+function setLocationButtonState(enabled, accOrMsg){
+  const btn = document.getElementById('btnEnableLoc');
+  if(!btn) return;
+  if(enabled){
+    btn.classList.remove('loc-off'); btn.classList.add('loc-on');
+    const title = (typeof accOrMsg === 'number') ? `Disable location (≈${accOrMsg} m)` : 'Disable location';
+    btn.setAttribute('title', title);
+    btn.setAttribute('aria-pressed','true');
+  }else{
+    btn.classList.remove('loc-on'); btn.classList.add('loc-off');
+    const title = (typeof accOrMsg === 'string') ? accOrMsg : 'Enable location';
+    btn.setAttribute('title', title);
+    btn.setAttribute('aria-pressed','false');
+  }
+}
+
+/* initialize location button visual state (off by default) */
+document.addEventListener('DOMContentLoaded', ()=> {
+  setLocationButtonState(false);
 });
 
 /* ---------------- Helpers needed by capture / UI ---------------- */
@@ -350,41 +705,65 @@ function dataURLtoBlob(dataURL){
   return new Blob([u8], {type:mime});
 }
 
-/** Normalize an image file to a landscape canvas (rotate if portrait), scale to maxW */
+/** Normalize an image file to a landscape canvas (rotate if portrait), scale to maxW
+    - Loads image reliably into an HTMLImageElement
+    - Preserves aspect ratio
+    - Rotates portrait sources 90° to yield landscape output
+*/
 async function normalizeToLandscape(file, maxW){
-  // try createImageBitmap first
-  let img;
-  if(window.createImageBitmap){
-    img = await createImageBitmap(file);
-  }else{
-    // fallback to Image + object URL
-    img = await new Promise((res, rej)=>{
-      const i = new Image();
-      i.onload = ()=>res(i);
-      i.onerror = rej;
-      i.src = URL.createObjectURL(file);
-    });
-  }
+  // helper to load an image element from a File/Blob
+  const loadImg = (blob) => new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = (e) => rej(e);
+    // Avoid tainting from cross-origin; blob URL is same-origin
+    img.src = URL.createObjectURL(blob);
+  });
 
-  let w = img.width, h = img.height;
-  const rotate = h > w;
-  const targetW = rotate ? h : w;
-  const scale = Math.min(1, (maxW || 1920) / targetW);
-  const outW = Math.round((rotate ? h : w) * scale);
-  const outH = Math.round((rotate ? w : h) * scale);
+  const img = await loadImg(file);
+
+  // source dimensions
+  const sw = img.width;
+  const sh = img.height;
+
+  // determine if source is portrait and compute scale based on longest side
+  const sourceLong = Math.max(sw, sh);
+  const scale = Math.min(1, (maxW || 1920) / sourceLong);
+
+  // When rotating a portrait, output dimensions swap
+  const rotate = sh > sw;
+  const outW = Math.round((rotate ? sh : sw) * scale);
+  const outH = Math.round((rotate ? sw : sh) * scale);
 
   const canvas = document.createElement('canvas');
-  canvas.width = outW; canvas.height = outH;
+  canvas.width = outW;
+  canvas.height = outH;
   const ctx = canvas.getContext('2d');
 
-  if(rotate){
-    // rotate 90deg clockwise: translate to right, rotate, draw
-    ctx.translate(outW, 0);
-    ctx.rotate(Math.PI/2);
-    ctx.drawImage(img, 0, 0, w, h, 0, 0, outH, outW);
-  }else{
-    ctx.drawImage(img, 0, 0, w, h, 0, 0, outW, outH);
+  if (rotate) {
+    // Rotate 90deg clockwise and draw the scaled image centered.
+    ctx.save();
+    // translate to canvas center and rotate
+    ctx.translate(outW / 2, outH / 2);
+    ctx.rotate(Math.PI / 2);
+    // draw the image centered at the origin, scaled
+    const dw = Math.round(sw * scale);
+    const dh = Math.round(sh * scale);
+    ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+    ctx.restore();
+  } else {
+    // Landscape: draw scaled to fit canvas
+    const dw = Math.round(sw * scale);
+    const dh = Math.round(sh * scale);
+    // center within canvas (should equal canvas size normally)
+    const dx = Math.round((outW - dw) / 2);
+    const dy = Math.round((outH - dh) / 2);
+    ctx.drawImage(img, dx, dy, dw, dh);
   }
+
+  // release object URL created by loadImg (best-effort)
+  try { URL.revokeObjectURL(img.src); } catch (e) {}
+
   return canvas;
 }
 
@@ -477,7 +856,7 @@ function renderGallery(){
   gallery.innerHTML = '';
   state.items.forEach(item=>{
     const card=document.createElement('div'); card.className='thumb';
-    const c=document.createElement('canvas'); c.width=item.w; c.height=item.h;
+    const c=document.createElement('canvas'); c.width=item.w || (item._preview && item._preview.width) || 800; c.height=item.h || (item._preview && item._preview.height) || 600;
     const ctx = c.getContext('2d');
     if(item._preview) ctx.drawImage(item._preview,0,0);
     const meta=document.createElement('div'); meta.className='meta';
@@ -490,9 +869,33 @@ function renderGallery(){
         gpsText = ` • Lat ${item.gps.lat.toFixed(6)}, Lon ${item.gps.lon.toFixed(6)} (≈${Math.round(item.gps.accuracy||3)} m)`;
       }
     }
-    meta.innerHTML = `<div><strong>${escapeHTML(item.desc||'(no description)')}</strong><span class="badge">${item.w}×${item.h}</span></div>
+    meta.innerHTML = `<div><strong>${escapeHTML(item.desc||'(no description)')}</strong><span class="badge">${c.width}×${c.height}</span></div>
       <small>${when.toLocaleString()}${gpsText} • ${escapeHTML(item.tech||'')} • ${escapeHTML(item.loc||'')}</small>`;
-    card.appendChild(c); card.appendChild(meta);
+    
+    // Add delete button for individual image removal (removes from current collection)
+    const deleteBtn = document.createElement('button');
+    deleteBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    deleteBtn.style.position = 'absolute';
+    deleteBtn.style.top = '5px';
+    deleteBtn.style.right = '5px';
+    deleteBtn.style.background = 'transparent';
+    deleteBtn.style.border = 'none';
+    deleteBtn.style.borderRadius = '0';
+    deleteBtn.style.width = '20px';
+    deleteBtn.style.height = '20px';
+    deleteBtn.style.cursor = 'pointer';
+    deleteBtn.title = 'Delete this image';
+    deleteBtn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to delete this image from this collection?')) return;
+      const index = state.items.indexOf(item);
+      if (index > -1) {
+        state.items.splice(index, 1);
+        saveGlobalsToSession(activeSessionId);
+        renderGallery();
+      }
+    });
+    
+    card.appendChild(c); card.appendChild(meta); card.appendChild(deleteBtn);
     gallery.appendChild(card);
   });
   const countEl = document.getElementById('count');
@@ -535,7 +938,8 @@ fileInput.addEventListener('change', async (e)=>{
     }
     descText.value='';
     const now = new Date();
-    descWhen.value = new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    // include seconds (slice to 19 to get YYYY-MM-DDTHH:MM:SS)
+    descWhen.value = new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
     // populate position field in dialog using pendingGPS or lastKnownPos (watch supplies lastKnownPos)
     const posToShow = pendingGPS || lastKnownPos;
     descPosition.value = fmtBNGDisplay(posToShow);
@@ -561,87 +965,52 @@ descOK.addEventListener('click', async ()=>{
    const id = await idbAdd(item);
    item.id=id; item._preview=pendingCanvas;
    state.items.push(item);
+   saveGlobalsToSession(activeSessionId); // Persist immediately after adding
    renderGallery();
    pendingCanvas=null; pendingGPS=null; descDialog.close();
  });
  
 // do NOT start watching automatically — require user gesture
-btnEnableLoc.textContent = 'Enable Location';
+async function openCollectionsPanel() {
+  const panel = document.getElementById('collections');
+  if (!panel) {
+    console.error('Collections panel not found');
+    return;
+  }
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('collections-open');
+}
+
+async function closeCollectionsPanel() {
+  const panel = document.getElementById('collections');
+  if (!panel) {
+    console.error('Collections panel not found');
+    return;
+  }
+  panel.classList.remove('open');
+  panel.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('collections-open');
+}
+
 /* ---------- Startup ---------- */
 (async function init(){
-  const rows=await idbAll();
-  for(const r of rows){
-    const img = new Image();
-    await new Promise(ok=>{ img.onload=ok; img.src=r.dataURL; });
-    const c=document.createElement('canvas'); c.width=img.width; c.height=img.height;
-    c.getContext('2d').drawImage(img,0,0);
-    r._preview=c;
-  }
-  state.items = rows; renderGallery();
+  await loadPersistedSessions();
 })();
+
 btnClear.addEventListener('click', async ()=>{
-  if(!confirm('Delete all stored items from this device?')) return;
-  await idbClear(); state.items=[]; renderGallery();
+  if(!confirm('Clear all images from the current collection?')) return;
+  state.items = [];
+  saveGlobalsToSession(activeSessionId);
+  renderGallery();
 });
 
 /* ---------- Export helpers that return Blobs ---------- */
-function buildPDFBlob(){
-  if(state.items.length===0) { alert('Nothing to export.'); return null; }
-  const { jsPDF } = window.jspdf;
-  const layout = parseInt(layoutSel.value,10);
-  const marginsMM = Number(marginsInput.value)||10;
-  const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-  const innerW = pageW - marginsMM*2;
-  const innerH = pageH - marginsMM*2;
-  const perPage = layout;
-  const grid = layout===1 ? {rows:1, cols:1} : (layout===2 ? {rows:2, cols:1} : {rows:2, cols:2});
-  const cellW = innerW / grid.cols;
-  const cellH = innerH / grid.rows;
-  const groups=[]; for(let i=0;i<state.items.length;i+=perPage) groups.push(state.items.slice(i,i+perPage));
-  let first=true;
-  for(const group of groups){
-    if(!first) pdf.addPage(); first=false;
-    group.forEach((item, idx)=>{
-      const r = Math.floor(idx / grid.cols);
-      const c = idx % grid.cols;
-      const x0 = marginsMM + c*cellW;
-      const y0 = marginsMM + r*cellH;
-      const imgWmm = cellW;
-      const imgHmm = cellH - 14;
-      const iw = item.w, ih = item.h, ir = iw/ih;
-      let drawW = imgWmm, drawH = drawW/ir;
-      if(drawH > imgHmm){ drawH = imgHmm; drawW = drawH*ir; }
-      const dx = x0 + (cellW - drawW)/2;
-      const dy = y0 + 2 + (imgHmm - drawH)/2;
-      const format = item.dataURL.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-      pdf.addImage(item.dataURL, format, dx, dy, drawW, drawH);
-      const caption = `${item.desc||''}`.trim();
-      let gpsText = '';
-      if(item.gps){
-        if(typeof item.gps.bngE !== 'undefined'){
-          gpsText = ` • ${fmtBNGDisplay(item.gps)}`;
-        }else if(typeof item.gps.lat === 'number' && typeof item.gps.lon === 'number'){
-          gpsText = ` • Lat ${item.gps.lat.toFixed(6)}, Lon ${item.gps.lon.toFixed(6)} (≈${Math.round(item.gps.accuracy||3)} m)`;
-        }
-      }
-      const sub = [ item.whenISO ? new Date(item.whenISO).toLocaleString() : new Date(item.created).toLocaleString(), item.tech||'', item.loc||'' ].filter(Boolean).join(' • ');
-      pdf.setFontSize(10); pdf.text(caption || '(no description)', x0+2, y0 + cellH - 8, {maxWidth: cellW-4});
-      pdf.setFontSize(8); pdf.setTextColor(160);
-      pdf.text(sub + gpsText, x0+2, y0 + cellH - 3, {maxWidth: cellW-4});
-      pdf.setTextColor(0);
-    });
-  }
-  // Add small caveat note on first page bottom
-  pdf.setFontSize(8);
-  pdf.setTextColor(160);
-  pdf.text('*BNG approximate, derived from device GPS and converted to British National Grid. Estimated accuracy ~3 m.', marginsMM, pageH - marginsMM + 4);
-  pdf.setTextColor(0);
-  return pdf.output('blob');
-}
 async function buildPPTXBlob(fileName){
   if(state.items.length===0) { alert('Nothing to export.'); return null; }
+  
+  // Ensure current session data is saved before export
+  saveGlobalsToSession(activeSessionId);
 
   const layout = parseInt(layoutSel.value,10); // 1,2,4
   const perSlide = layout;
@@ -671,7 +1040,7 @@ async function buildPPTXBlob(fileName){
   const contentH = slideH - margin*2;
 
   // Grid selection: make 2-up side-by-side in landscape, stacked in portrait
-  const grid = layout === 1 ? { rows:1, cols:1 } : (layout === 2 ? (isLandscape ? { rows:1, cols:2 } : { rows:2, cols:1 }) : { rows:2, cols:2 });
+  const grid = layout === 1 ? { rows: 1, cols: 1 } : (layout === 2 ? (isLandscape ? { rows: 1, cols: 2 } : { rows: 2, cols: 1 }) : { rows: 2, cols: 2 });
   const cellW = contentW / grid.cols;
   const cellH = contentH / grid.rows;
 
@@ -698,6 +1067,89 @@ async function buildPPTXBlob(fileName){
   let slideIndex = 0;
   let globalPhotoIndex = 0; // sequential numbering across slides
 
+  // Insert helper to draw the entire right panel (logo, desc rows, footer fields)
+  function addRightPanel(slide, {
+    pptx,
+    sideX,
+    sideW,
+    panelTopY,
+    panelH,
+    textGrey,
+    borderBlue,
+    panelFill,
+    logoDataUrl,
+    pageNumber,
+    descItems,        // array of up to 4 { num: 1-based index, text: 'desc...' }
+    client,
+    project,
+    collection,
+    photographer
+  }) {
+    // Internal layout constants
+    const innerPadX     = 0.18;
+    const innerW        = sideW - (innerPadX * 2);
+    const headingFontSize = 12;
+    const labelFontSize   = 8;
+    const fieldFontSize   = 9;
+    const descRowH     = 0.4;
+    const descGapY     = 0.08;
+    const logoBlockH   = 0.9;
+    const postLogoGap  = 0.25;
+    const footerLabelH = 0.1;
+    const footerBoxH   = 0.27;
+    const footerGapY   = 0.15;
+    const labelBoxGap  = 0.075; // Increased by 50% from 0.05 to reduce overlap
+
+    // 1. Panel background
+    slide.addShape(pptx.ShapeType.rect, { x: sideX, y: panelTopY, w: sideW, h: panelH, fill: { color: panelFill } });
+
+    // --- Top 50% section (Descriptions) ---
+    let yCursor = panelTopY + 0.2;
+    slide.addText('Photo Descriptions', { x: sideX + innerPadX, y: yCursor, w: innerW, h: 0.3, fontSize: headingFontSize, bold: true, color: textGrey, align: 'left', valign: 'top' });
+    yCursor += 0.4;
+
+    for (let i = 0; i < 4; i++) {
+      const item = descItems[i];
+      slide.addShape(pptx.ShapeType.rect, { x: sideX + innerPadX, y: yCursor, w: innerW, h: descRowH, fill: { color: 'FFFFFF' }, line: { color: borderBlue } });
+      if (item) {
+        const lineText = item.text && item.text.trim() !== '' ? `${item.num}    ${item.text}` : String(item.num);
+        slide.addText(lineText, { x: sideX + innerPadX + 0.08, y: yCursor + 0.08, w: innerW - 0.16, h: descRowH - 0.16, fontSize: fieldFontSize, color: textGrey, align: 'left', valign: 'top' });
+      }
+      yCursor += descRowH + descGapY;
+    }
+
+    // --- Bottom 50% section (Logo and Footer Fields) ---
+    let footerCursor = panelTopY + (panelH / 2); // Start at the vertical midpoint
+
+    // Logo
+    if (logoDataUrl) {
+      slide.addImage({ data: logoDataUrl, x: sideX + innerPadX, y: footerCursor, w: innerW, h: logoBlockH });
+    } else {
+      slide.addText('BROWNFIELD\nSOLUTIONS', { x: sideX + innerPadX, y: footerCursor + 0.1, w: innerW, h: logoBlockH, fontSize: 12, bold: true, color: textGrey, align: 'left', valign: 'top' });
+    }
+    footerCursor += logoBlockH + postLogoGap;
+
+    // Footer Fields
+    function drawFooterField(label, value) {
+      slide.addText(label, { x: sideX + innerPadX, y: footerCursor, w: innerW, h: footerLabelH, fontSize: labelFontSize, bold: true, color: textGrey, align: 'left', valign: 'top' });
+      const boxY = footerCursor + footerLabelH + labelBoxGap;
+      slide.addShape(pptx.ShapeType.rect, { x: sideX + innerPadX, y: boxY, w: innerW, h: footerBoxH, fill: { color: 'FFFFFF' }, line: { color: borderBlue } });
+      if (value && value.trim() !== '') {
+        slide.addText(value, { x: sideX + innerPadX + 0.08, y: boxY + 0.05, w: innerW - 0.16, h: footerBoxH - 0.1, fontSize: fieldFontSize, color: textGrey, align: 'left', valign: 'top' });
+      }
+      footerCursor += footerLabelH + labelBoxGap + footerBoxH + footerGapY;
+    }
+
+    drawFooterField('CLIENT', client || '');
+    drawFooterField('PROJECT TITLE', project || '');
+    drawFooterField('COLLECTION', collection || '');
+    drawFooterField('PHOTOGRAPHER', photographer || '');
+
+    // Page number (remains at the absolute bottom of the panel)
+    slide.addText(`Page ${pageNumber}`, { x: sideX, y: panelTopY + panelH - 0.3, w: sideW - 0.1, h: 0.2, fontSize: 8, color: textGrey, align: 'right' });
+  }
+
+  const activeSession = sessions[activeSessionId] || {};
   for(const group of groups){
     slideIndex++;
     const slide = pptx.addSlide();
@@ -705,146 +1157,81 @@ async function buildPPTXBlob(fileName){
     // Background
     try{ slide.addShape(pptx.ShapeType.rect, { x:0, y:0, w:slideW, h:slideH, fill:{ color:'FFFFFF' } }); }catch(e){}
 
-    // Right-hand panel background
+    // Right-hand panel background (keep panel background creation for compatibility)
     const sideX = slideW - margin - sideW;
     try{ slide.addShape(pptx.ShapeType.rect, { x: sideX, y: margin, w: sideW, h: contentH, fill:{ color: lightGrey } }); }catch(e){}
 
-    // Header
-    slide.addText('Photo Descriptions', { x: sideX + 0.06, y: margin + 0.08, w: sideW - 0.12, h: 0.28, fontSize:12, bold:true, color:textGrey });
-
-    // Description boxes
-    const descBoxH = Math.min(1.35, contentH * 0.22);
-    const descStartY = margin + 0.6;
-    const oneBoxH = descBoxH / 4;
-    for(let i=0;i<4;i++){
-      const y = descStartY + i*oneBoxH;
-      slide.addShape(pptx.ShapeType.rect, { x: sideX + 0.06, y: y, w: sideW - 0.12, h: oneBoxH - 0.05, fill:{ color:'FFFFFF' }, line:{ color:'CFE2F7' } });
-      slide.addText(String(i+1), { x: sideX + 0.08, y: y + 0.03, w: 0.2, h: oneBoxH - 0.05, fontSize:9, color:textGrey });
-      const descItem = group[i];
-      const descText = descItem ? ((descItem.desc||'').replace(/\r?\n/g,' ').slice(0,160)) : '';
-      slide.addText(descText || '', { x: sideX + 0.34, y: y + 0.03, w: sideW - 0.48, h: oneBoxH - 0.05, fontSize:8, color:textGrey, align:'left' });
-    }
-
-    // Footer boxes (client/project)
-    const footerY = Math.max(margin + contentH - 2.2, margin + contentH * 0.55);
-    slide.addText('CLIENT', { x: sideX + 0.06, y: footerY, w: sideW - 0.12, h: 0.18, fontSize:8, color:textGrey });
-    slide.addShape(pptx.ShapeType.rect, { x: sideX + 0.06, y: footerY + 0.2, w: sideW - 0.12, h: 0.5, fill:{ color:'FFFFFF' }, line:{ color:'CFE2F7' } });
-    slide.addText('PROJECT TITLE', { x: sideX + 0.06, y: footerY + 0.74, w: sideW - 0.12, h: 0.18, fontSize:8, color:textGrey });
-    slide.addShape(pptx.ShapeType.rect, { x: sideX + 0.06, y: footerY + 0.94, w: sideW - 0.12, h: 0.5, fill:{ color:'FFFFFF' }, line:{ color:'CFE2F7' } });
-
-    // Logo (if available)
-    const logoY = footerY + 1.6;
-    if(logoDataUrl){
-      try{
-        const logoHeight = Math.min(0.9, (contentH * 0.15));
-        slide.addImage({ data: logoDataUrl, x: sideX + 0.06, y: logoY + 0.06, w: sideW - 0.12, h: logoHeight });
-      }catch(e){
-        slide.addText('Brownfield Solutions Ltd', { x: sideX + 0.06, y: logoY + 0.1, w: sideW - 0.12, h: 0.24, fontSize:7, color:textGrey });
-      }
-    }else{
-      slide.addText('Brownfield Solutions Ltd', { x: sideX + 0.06, y: logoY + 0.1, w: sideW - 0.12, h: 0.24, fontSize:7, color:textGrey });
-    }
-
-    // Caveat inside panel (first slide only)
-    if(slideIndex === 1){
-      const caveatY = descStartY + descBoxH + 0.06;
-      slide.addText('*BNG approximate, derived from device GPS and converted to British National Grid. Estimated accuracy ~3 m.', { x: sideX + 0.06, y: caveatY, w: sideW - 0.12, h: 0.36, fontSize:7, color:textGrey });
-    }
-
-    // Place photos (grid fill left->right, top->bottom)
-    for(let idx=0; idx<group.length; idx++){
-      const item = group[idx];
-      if(!item) continue;
+    // Add images to the slide
+    group.forEach((item, idx) => {
       const r = Math.floor(idx / grid.cols);
       const c = idx % grid.cols;
-      const x = margin + c * cellW;
-      const y = margin + r * cellH;
+      const cellX = margin + c * cellW;
+      const cellY = margin + r * cellH;
 
-      // Ensure photo stays inside content area (no overlap with side panel)
-      const captionStripH = Math.min(0.32, cellH * 0.12);
-      const availableH = cellH - captionStripH - 0.06;
-      const imgAR = item.w / item.h;
-      let iw = cellW - 0.06;
-      let ih = iw / imgAR;
-      if(ih > availableH){
-        ih = availableH;
-        iw = ih * imgAR;
+      // Reserve space for text below image (e.g., 20% of cellH for text)
+      const imageH = cellH * 0.8;
+      const textY = cellY + imageH + 0.05; // small gap
+
+      // Calculate scaled image size to fit within cellW and imageH, preserving aspect ratio
+      const imgAspect = item.w / item.h;
+      let imgW = cellW;
+      let imgH = imgW / imgAspect;
+      if (imgH > imageH) {
+        imgH = imageH;
+        imgW = imgH * imgAspect;
       }
-      const ix = x + (cellW - iw) / 2;
-      const iy = y + 0.03 + ((availableH - ih) / 2);
+      // Center the image horizontally
+      const imgX = cellX + (cellW - imgW) / 2;
+      const imgY = cellY;
 
-      // embed image — use dataURL (base64) to ensure media is included
-      try{
-        // Some PptxGenJS versions accept 'data:' URLs, others prefer raw base64.
-        // Pass the full dataURL first (most reliable), fallback to base64 without prefix if needed.
-        const dataURL = item.dataURL;
-        slide.addImage({ data: dataURL, x: ix, y: iy, w: iw, h: ih });
-      }catch(e){
-        // If addImage fails, try stripping prefix
-        try{
-          const parts = (item.dataURL||'').split(',');
-          const base64 = parts.length>1 ? parts[1] : parts[0];
-          const ext = (item.dataURL||'').includes('png') ? 'png' : 'jpeg';
-          slide.addImage({ data: base64, extension: ext, x: ix, y: iy, w: iw, h: ih });
-        }catch(_){
-          console.warn('Failed to embed image for slide', slideIndex, idx, _);
-        }
+      try {
+        slide.addImage({ data: item.dataURL, x: imgX, y: imgY, w: imgW, h: imgH });
+      } catch (e) {
+        console.warn('Failed to add image to slide', e);
       }
 
+      // Add text below the image: photo number and BNG location
       globalPhotoIndex++;
-      const photoLabel = globalPhotoIndex;
-
-      // Blue label bar
-      const labelY = y + cellH - captionStripH + 0.02;
-      slide.addText(`PHOTO ${photoLabel}:`, { x: x + 0.02, y: labelY, w: cellW - 0.04, h: 0.22, align:'left', fontSize:10, color:'FFFFFF', fill:{ color:blueBar } });
-
-      // Metadata and caption
-      const metaY = labelY + 0.24;
-      let gpsText = '';
-      if(item.gps){
-        if(typeof item.gps.bngE !== 'undefined') gpsText = ` • ${fmtBNGDisplay(item.gps)}`;
-        else if(typeof item.gps.lat === 'number' && typeof item.gps.lon === 'number') gpsText = ` • Lat ${item.gps.lat.toFixed(6)}, Lon ${item.gps.lon.toFixed(6)} (≈${Math.round(item.gps.accuracy||3)} m)`;
+      let locationText = '';
+      if (item.gps && typeof item.gps.bngE !== 'undefined') {
+        locationText = `BNG: E ${item.gps.bngE} N ${item.gps.bngN}`;
+      } else if (item.gps && typeof item.gps.lat === 'number') {
+        locationText = `Lat ${item.gps.lat.toFixed(6)}, Lon ${item.gps.lon.toFixed(6)}`;
       }
-      const sub = [ item.whenISO ? new Date(item.whenISO).toLocaleString() : new Date(item.created).toLocaleString(), item.tech||'', item.loc||'' ].filter(Boolean).join(' • ');
-      slide.addText((item.desc||'(no description)'), { x: ix, y: metaY, w: iw, h: 0.28, fontSize:9, color:textGrey, align:'left' });
-      slide.addText((sub + gpsText).trim(), { x: ix, y: metaY + 0.28, w: iw, h: 0.24, fontSize:7.5, color:textGrey, align:'left' });
-    }
+      const photoText = `Photo ${globalPhotoIndex}`;
+      const fullText = locationText ? `${photoText} - ${locationText}` : photoText;
+      slide.addText(fullText, { x: cellX + 0.05, y: textY, w: cellW - 0.1, h: cellH - imageH - 0.1, fontSize: 8, color: textGrey, align: 'center' });
+    });
 
-    // --- NEW: call helper to draw bottom-right table on this slide ---
-    if(typeof addBottomRightTable === 'function'){
-      try{
-        // build table data from `group` as an example (1 row x group.length cols)
-        const cols = Math.min(3, group.length || 1);
-        const rows = 1;
-        const rowData = new Array(rows).fill(0).map(()=>{
-          return new Array(cols).fill(0).map((_,i)=>{
-            const item = group[i];
-            return { label: item ? `Photo ${i+1}` : '', value: item ? (item.desc||'') : '' };
-          });
-        });
+    // Build descItems for this slide using the sequential globalPhotoIndex.
+    // globalPhotoIndex was incremented while adding images above.
+    const startNum = Math.max(1, globalPhotoIndex - group.length + 1);
+    const descItems = group.map((item, idx) => ({
+      num: startNum + idx,
+      text: (item.desc || '').replace(/\r?\n/g, ' ')
+    }));
 
-        await addBottomRightTable(slide, {
-          slideWidthIn: slideW,
-          slideHeightIn: slideH,
-          marginIn: margin,
-          areaWidthIn: 2.1,
-          areaHeightIn: 0.9,
-          areaRightIn: margin,
-          areaBottomIn: margin,
-          cols,
-          rows,
-          labelPt: 8,
-          valuePt: 9,
-          cellPaddingIn: 0.06,
-          data: rowData
-        });
-      }catch(e){
-        console.warn('addBottomRightTable failed', e);
-      }
-    }
+    // Draw the entire right panel using the helper (logo, desc rows, footer fields, page number)
+    addRightPanel(slide, {
+      pptx,
+      sideX,
+      sideW,
+      panelTopY: margin,
+      panelH: contentH,
+      textGrey,
+      borderBlue: blueBar,
+      panelFill: lightGrey,
+      logoDataUrl,
+      pageNumber: slideIndex,
+      descItems,
+      client:       activeSession.client || '',
+      project:      activeSession.project || '',
+      collection:   activeSession.name || '',
+      photographer: activeSession.photographer || ''
+    });
 
-    // Slide number bottom-right (outside panel)
-    slide.addText(`Page ${slideIndex}`, { x: slideW - margin - 1.2, y: slideH - margin - 0.18, w: 1.2, h: 0.18, fontSize:8, color:textGrey, align:'right' });
+    // Slide number bottom-right outside panel is now handled by addRightPanel; if you still
+    // want an extra page text outside, keep previous call (optional).
   }
 
   // Write blob and ensure PPTX MIME
@@ -865,13 +1252,6 @@ async function buildPPTXBlob(fileName){
   }
 }
 /* local downloads for manual export */
-btnExportPDF.addEventListener('click', ()=>{
-  const blob = buildPDFBlob(); if(!blob) return;
-  const a=document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `evidence_${new Date().toISOString().slice(0,10)}_${layoutSel.value}ppA4.pdf`;
-  a.click();
-});
 btnExportPPTX.addEventListener('click', async ()=>{
   const fileName = `evidence_${new Date().toISOString().slice(0,10)}_${layoutSel.value}ppA4.pptx`;
   const blob = await buildPPTXBlob(fileName);
@@ -882,12 +1262,379 @@ btnExportPPTX.addEventListener('click', async ()=>{
   a.click();
 });
 </script>
-<!-- Place after your other scripts, near end of body -->
+
+<script>
+/* Add event listeners for Close and New Collection buttons */
+document.addEventListener('DOMContentLoaded', () => {
+  // Close button inside the Collections panel
+  const collectionsClose = document.getElementById('collectionsClose');
+  if (collectionsClose) {
+    collectionsClose.addEventListener('click', () => {
+      const panel = document.getElementById('collections');
+      if (panel) {
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('collections-open');
+      }
+    });
+  }
+
+  // New Collection button inside the Collections panel
+  const newCollectionBtn = document.getElementById('newCollectionBtn');
+  if (newCollectionBtn) {
+
+    newCollectionBtn.addEventListener('click', async () => {
+      // Create a new session (collection)
+      const newSessionId = await createNewSession();
+
+      // Close the Collections panel
+      const panel = document.getElementById('collections');
+      if (panel) {
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('collections-open');
+      }
+
+      // Focus the collection title input for immediate editing
+      collectionTitleInput.focus();
+    });
+  }
+});
+</script>
+
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js')
     .catch(err => console.warn('ServiceWorker registration failed:', err));
 }
 </script>
+
+<!-- Params panel wiring: toggle, populate, save (syncs to main inputs, state and sessions) -->
+<script>
+(function paramsPanelInit(){
+  const paramsToggle = document.getElementById('paramsToggle');
+  const paramsPanel = document.getElementById('paramsPanel');
+  const paramsClose = document.getElementById('paramsClose');
+  const paramsSave = document.getElementById('paramsSave');
+
+  const pCollection = document.getElementById('params_collectionTitle');
+  const pClient     = document.getElementById('params_clientName');
+  const pProject    = document.getElementById('params_projectTitle');
+  const pPhotog     = document.getElementById('params_photographerName');
+
+  // Helper: open panel and populate values from current globals / inputs
+  function openParams(){
+    // populate from active session if available, otherwise from main inputs/state
+    const s = sessions[activeSessionId] || {};
+    pCollection.value = s.name || collectionTitleInput.value || '';
+    pClient.value = s.client || clientNameInput.value || state.client || '';
+    pProject.value = s.project || projectTitleInput.value || state.project || '';
+    pPhotog.value = s.photographer || photographerNameInput.value || state.photographer || '';
+    paramsPanel.classList.add('open');
+    paramsPanel.setAttribute('aria-hidden','false');
+    document.body.classList.add('params-open');
+  }
+
+  function closeParams(){
+    paramsPanel.classList.remove('open');
+    paramsPanel.setAttribute('aria-hidden','true');
+    document.body.classList.remove('params-open');
+  }
+
+  // Save: copy params back to main inputs, state and active session then persist
+  async function saveParams(){
+    const valCollection = pCollection.value.trim();
+    const valClient = pClient.value.trim();
+    const valProject = pProject.value.trim();
+    const valPhotog = pPhotog.value.trim();
+
+    collectionTitleInput.value = valCollection;
+    clientNameInput.value = valClient;
+    projectTitleInput.value = valProject;
+    photographerNameInput.value = valPhotog;
+
+    state.client = valClient;
+    state.project = valProject;
+    state.photographer = valPhotog;
+
+    if(activeSessionId && sessions[activeSessionId]){
+      sessions[activeSessionId].name = valCollection;
+      sessions[activeSessionId].client = valClient;
+      sessions[activeSessionId].project = valProject;
+      sessions[activeSessionId].photographer = valPhotog;
+      persistSessions();
+    }
+
+    updateTabsUI && updateTabsUI(); // refresh UI summary if available
+    closeParams();
+  }
+
+  if(paramsToggle) paramsToggle.addEventListener('click', ()=> {
+    const open = paramsPanel.classList.contains('open');
+    if(open) closeParams(); else openParams();
+  });
+  if(paramsClose) paramsClose.addEventListener('click', closeParams);
+  if(paramsSave) paramsSave.addEventListener('click', saveParams);
+
+  // Keep main inputs synced to state when edited (so panel picks up live values)
+  clientNameInput.addEventListener('input', ()=> state.client = clientNameInput.value.trim());
+  projectTitleInput.addEventListener('input', ()=> state.project = projectTitleInput.value.trim());
+  photographerNameInput.addEventListener('input', ()=> state.photographer = photographerNameInput.value.trim());
+  collectionTitleInput.addEventListener('input', ()=> {
+    if(activeSessionId && sessions[activeSessionId]) {
+      sessions[activeSessionId].name = collectionTitleInput.value.trim();
+      persistSessions();
+      updateTabsUI();
+    }
+  });
+
+  // close panel on Escape
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeParams(); });
+})();
+</script>
+
+<script>
+/* ---------------- Session Manager ---------------- */
+const sessions = {};
+let activeSessionId = null;
+
+async function persistSession(session) {
+  await idbAddSession(session);
+}
+
+async function createNewSession(fromData = null) {
+  const id = Date.now().toString();
+  const base = {
+    id,
+    name: `Collection ${Object.keys(sessions).length + 1}`,
+    client: '',
+    project: '',
+    photographer: '',
+    items: [],
+  };
+  const newSession = fromData ? { ...base, ...fromData, id } : base;
+  sessions[id] = newSession;
+  await persistSession(newSession);
+  await activateSession(id);
+  return id;
+}
+
+function saveGlobalsToSession(id) {
+  if (!id || !sessions[id]) return;
+  const s = sessions[id];
+  s.name = collectionTitleInput.value || s.name;
+  s.client = state.client || s.client;
+  s.project = state.project || s.project;
+  s.photographer = state.photographer || s.photographer;
+  s.items = state.items.slice(); // Embed full items
+  persistSession(s);
+}
+
+async function loadSessionToGlobals(id) {
+  if (!id || !sessions[id]) return;
+  const s = sessions[id];
+  state.items = s.items ? s.items.slice() : [];
+  state.client = s.client || '';
+  state.project = s.project || '';
+  state.photographer = s.photographer || '';
+  collectionTitleInput.value = s.name || '';
+  clientNameInput.value = state.client;
+  projectTitleInput.value = state.project;
+  photographerNameInput.value = state.photographer;
+
+  // Rebuild _preview canvases for each item to ensure thumbnails render
+  for (const item of state.items) {
+    if (item.dataURL && !item._preview) {
+      const img = new Image();
+      await new Promise(ok => { img.onload = ok; img.onerror = ok; img.src = item.dataURL; });
+      const c = document.createElement('canvas');
+      c.width = item.w || img.width;
+      c.height = item.h || img.height;
+      const ctx = c.getContext('2d');
+      try { ctx.drawImage(img, 0, 0); } catch (e) {}
+      item._preview = c;
+    }
+  }
+
+  renderGallery();
+}
+
+async function activateSession(id) {
+  if (!id || !sessions[id]) return;
+  if (activeSessionId && activeSessionId !== id) {
+    saveGlobalsToSession(activeSessionId);
+  }
+  activeSessionId = id;
+  await loadSessionToGlobals(id);
+  updateTabsUI();
+}
+
+async function closeSession(id) {
+  if (!sessions[id]) return;
+  const s = sessions[id];
+  const hasData = s.items && s.items.length > 0;
+  const promptMsg = hasData ? 'Delete this collection and all its photos? This cannot be undone.' : 'Delete this empty collection?';
+  if (!confirm(promptMsg)) return;
+  delete sessions[id];
+  await idbDeleteSession(id);
+  if (activeSessionId === id) {
+    const keys = Object.keys(sessions);
+    if (keys.length) {
+      await activateSession(keys[0]);
+    } else {
+      await createNewSession();
+    }
+  }
+  updateTabsUI();
+}
+
+function updateTabsUI() {
+  const listEl = document.getElementById('collectionsList');
+  if (listEl) {
+    listEl.innerHTML = '';
+    Object.values(sessions).forEach(s => {
+      const li = document.createElement('li');
+      li.className = 'session-tab' + (s.id === activeSessionId ? ' active' : '');      li.className = 'session-tab' + (s.id === activeSessionId ? ' active' : '');
+
+      // Editable collection name
+      const nameInput = document.createElement('input');nt.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = s.name || '(untitled)';'(untitled)';
+      nameInput.className = 'tab';
+      nameInput.title = 'Click to rename';
+      nameInput.addEventListener('change', async () => {) => {
+        s.name = nameInput.value.trim() || s.name;.trim() || s.name;
+        await persistSession(s);ssion(s);
+        updateTabsUI();
+        if (s.id === activeSessionId) {
+          collectionTitleInput.value = s.name; // Sync global collection title collectionTitleInput.value = s.name; // Sync global collection title
+        }
+      });
+      // Prevent clicks on the inline input from bubbling and activating the sessionng the session
+      nameInput.addEventListener('click', ev => ev.stopPropagation());      nameInput.addEventListener('click', ev => ev.stopPropagation());
+
+      // Focus the input field when clicking the pencil button button
+      const editBtn = document.createElement('button');.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'edit';';
+      editBtn.innerHTML = '✏️';
+      editBtn.title = 'Edit collection name';
+      editBtn.addEventListener('click', (ev) => {r('click', (ev) => {
+        ev.stopPropagation();();
+        nameInput.focus();ameInput.focus();
+      });      });
+
+      // Small close icon to delete session — rely on closeSession() to show the confirmationoseSession() to show the confirmation
+      const closeBtn = document.createElement('button');.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'close';
+      closeBtn.innerHTML = '&times;';
+      closeBtn.title = 'Delete collection';
+      closeBtn.addEventListener('click', async (ev) => {er('click', async (ev) => {
+        ev.stopPropagation();
+        // closeSession will prompt the user; don't double-confirm herept the user; don't double-confirm here
+        await closeSession(s.id);wait closeSession(s.id);
+      });      });
+
+      // Clicking the list item switches to that collection/sessiono that collection/session
+      li.addEventListener('click', () => {ck', () => {
+        activateSession(s.id);ctivateSession(s.id);
+      });      });
+
+      li.appendChild(nameInput););
+      li.appendChild(editBtn);
+      li.appendChild(closeBtn););
+      listEl.appendChild(li);istEl.appendChild(li);
+    }); });
+  }  }
+
+  const summary = document.getElementById('tabsSummary');bsSummary');
+  if (summary && sessions[activeSessionId]) {
+    summary.textContent = sessions[activeSessionId].name || ''; = sessions[activeSessionId].name || '';
+  } else if (summary) {
+    summary.textContent = ''; summary.textContent = '';
+  } }
+}}
+
+async function loadPersistedSessions() {) {
+  const arr = await idbAllSessions();
+  if (Array.isArray(arr) && arr.length) {r) && arr.length) {
+    arr.forEach(s => {
+      sessions[s.id] = s;essions[s.id] = s;
+    });
+    await activateSession(arr[0].id);activateSession(arr[0].id);
+  } else {
+    await createNewSession(); await createNewSession();
+  }
+  updateTabsUI(); updateTabsUI();
+}}
+
+/* Session Manager UI wiring */
+const collectionsToggle = document.getElementById('collectionsToggle');ggle');
+const collectionsPanel = document.getElementById('collections');
+const collectionsClose = document.getElementById('collectionsClose');
+const newCollectionBtn = document.getElementById('newCollectionBtn');const newCollectionBtn = document.getElementById('newCollectionBtn');
+
+collectionsToggle.addEventListener('click', () => {
+  collectionsPanel.classList.add('open'); // Add the "open" class to slide inen" class to slide in
+  collectionsPanel.setAttribute('aria-hidden', 'false');lse');
+  document.body.classList.add('collections-open');ocument.body.classList.add('collections-open');
+});
+collectionsClose.addEventListener('click', () => {
+  collectionsPanel.classList.remove('open'); // Remove the "open" class to slide outthe "open" class to slide out
+  collectionsPanel.setAttribute('aria-hidden', 'true'););
+  document.body.classList.remove('collections-open');ocument.body.classList.remove('collections-open');
+});
+newCollectionBtn.addEventListener('click', async () => {stener('click', async () => {
+  await createNewSession();
+  collectionsPanel.classList.remove('open'); // Close the panel after creating a sessionhe panel after creating a session
+  collectionsPanel.setAttribute('aria-hidden', 'true'););
+  document.body.classList.remove('collections-open');e('collections-open');
+  collectionTitleInput.focus();ollectionTitleInput.focus();
+});
+window.addEventListener('beforeunload', () => saveGlobalsToSession(activeSessionId));window.addEventListener('beforeunload', () => saveGlobalsToSession(activeSessionId));
+
+/* Initialize sessions on startup */
+document.addEventListener('DOMContentLoaded', () => {
+  loadPersistedSessions(); // Ensure sessions are loaded after DOM is readyoadPersistedSessions(); // Ensure sessions are loaded after DOM is ready
+});
+</script></script>
+
+<script>
+// Save client, project title, and photographer to state on input changeo state on input change
+clientNameInput.addEventListener('input', () => {> {
+  state.client = clientNameInput.value.trim();
+  if (activeSessionId && sessions[activeSessionId]) {{
+    sessions[activeSessionId].client = state.client;sionId].client = state.client;
+    persistSessions(); persistSessions();
+  }
+});});
+
+projectTitleInput.addEventListener('input', () => { {
+  state.project = projectTitleInput.value.trim();
+  if (activeSessionId && sessions[activeSessionId]) {
+    sessions[activeSessionId].project = state.project;sionId].project = state.project;
+    persistSessions(); persistSessions();
+  }
+});});
+
+photographerNameInput.addEventListener('input', () => {
+  state.photographer = photographerNameInput.value.trim();im();
+  if (activeSessionId && sessions[activeSessionId]) {
+    sessions[activeSessionId].photographer = state.photographer;sionId].photographer = state.photographer;
+    persistSessions(); persistSessions();
+  }
+});});
+
+collectionTitleInput.addEventListener('input', () => {ollectionTitleInput.addEventListener('input', () => {
+ 
+  if (activeSessionId && sessions[activeSessionId]) {
+    sessions[activeSessionId].name = collectionTitleInput.value.trim();sionId].name = collectionTitleInput.value.trim();
+    persistSessions();();
+    updateTabsUI(); updateTabsUI();
+  }
+});
+</script>t>
 </body>
-</html>
+</html></html>
+
