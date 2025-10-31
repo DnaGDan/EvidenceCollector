@@ -1383,10 +1383,9 @@ if ('serviceWorker' in navigator) {
       sessions[activeSessionId].client = valClient;
       sessions[activeSessionId].project = valProject;
       sessions[activeSessionId].photographer = valPhotog;
-      persistSessions();
+      persistSession(sessions[activeSessionId]);
     }
 
-    updateTabsUI && updateTabsUI(); // refresh UI summary if available
     closeParams();
   }
 
@@ -1404,8 +1403,7 @@ if ('serviceWorker' in navigator) {
   collectionTitleInput.addEventListener('input', ()=> {
     if(activeSessionId && sessions[activeSessionId]) {
       sessions[activeSessionId].name = collectionTitleInput.value.trim();
-      persistSessions();
-      updateTabsUI();
+      persistSession(sessions[activeSessionId]);
     }
   });
 
@@ -1415,25 +1413,27 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <script>
-/* ---------------- Session Manager ---------------- */
-const sessions = {};
+/* ---------------- Session Manager (clean implementation) ---------------- */
+const sessions = {};           // id -> session object
 let activeSessionId = null;
 
 async function persistSession(session) {
+  // ensure session has an id
+  if (!session || !session.id) throw new Error('Invalid session');
   await idbAddSession(session);
 }
 
 async function createNewSession(fromData = null) {
   const id = Date.now().toString();
-  const base = {
+  const name = fromData?.name || `Collection ${new Date().toLocaleString()}`;
+  const newSession = {
     id,
-    name: `Collection ${Object.keys(sessions).length + 1}`,
-    client: '',
-    project: '',
-    photographer: '',
-    items: [],
+    name,
+    client: fromData?.client || '',
+    project: fromData?.project || '',
+    photographer: fromData?.photographer || '',
+    items: fromData?.items ? fromData.items.slice() : []
   };
-  const newSession = fromData ? { ...base, ...fromData, id } : base;
   sessions[id] = newSession;
   await persistSession(newSession);
   await activateSession(id);
@@ -1441,29 +1441,37 @@ async function createNewSession(fromData = null) {
 }
 
 function saveGlobalsToSession(id) {
+  // Save the in-memory state into the session record and persist
   if (!id || !sessions[id]) return;
   const s = sessions[id];
   s.name = collectionTitleInput.value || s.name;
   s.client = state.client || s.client;
   s.project = state.project || s.project;
   s.photographer = state.photographer || s.photographer;
-  s.items = state.items.slice(); // Embed full items
-  persistSession(s);
+  // store serialisable copy of items (no canvas)
+  s.items = state.items.map(i => {
+    const { _preview, ...rest } = i;
+    return rest;
+  });
+  persistSession(s).catch(err => console.warn('persistSession failed', err));
 }
 
 async function loadSessionToGlobals(id) {
   if (!id || !sessions[id]) return;
   const s = sessions[id];
-  state.items = s.items ? s.items.slice() : [];
+  activeSessionId = id;
+
+  state.items = s.items ? s.items.map(i => ({ ...i })) : [];
   state.client = s.client || '';
   state.project = s.project || '';
   state.photographer = s.photographer || '';
+
   collectionTitleInput.value = s.name || '';
   clientNameInput.value = state.client;
   projectTitleInput.value = state.project;
   photographerNameInput.value = state.photographer;
 
-  // Rebuild _preview canvases for each item to ensure thumbnails render
+  // Rebuild _preview canvases for each item
   for (const item of state.items) {
     if (item.dataURL && !item._preview) {
       const img = new Image();
@@ -1478,148 +1486,135 @@ async function loadSessionToGlobals(id) {
   }
 
   renderGallery();
+  renderSessions(); // update sidebar UI
 }
 
 async function activateSession(id) {
   if (!id || !sessions[id]) return;
-  if (activeSessionId && activeSessionId !== id) {
+  // persist current session first
+  if (activeSessionId && sessions[activeSessionId]) {
     saveGlobalsToSession(activeSessionId);
   }
-  activeSessionId = id;
   await loadSessionToGlobals(id);
-  updateTabsUI();
 }
 
-async function closeSession(id) {
-  if (!sessions[id]) return;
-  const s = sessions[id];
-  const hasData = s.items && s.items.length > 0;
-  const promptMsg = hasData ? 'Delete this collection and all its photos? This cannot be undone.' : 'Delete this empty collection?';
-  if (!confirm(promptMsg)) return;
-  delete sessions[id];
-  await idbDeleteSession(id);
-  if (activeSessionId === id) {
-    const keys = Object.keys(sessions);
-    if (keys.length) {
-      await activateSession(keys[0]);
-    } else {
-      await createNewSession();
-    }
-  }
-  updateTabsUI();
-}
-
-function updateTabsUI() {
+function renderSessions() {
   const listEl = document.getElementById('collectionsList');
-  if (listEl) {
-    listEl.innerHTML = '';
-    Object.values(sessions).forEach(s => {
-      const li = document.createElement('li');
-      li.className = 'session-tab' + (s.id === activeSessionId ? ' active' : '');      li.className = 'session-tab' + (s.id === activeSessionId ? ' active' : '');
+  if (!listEl) return;
+  listEl.innerHTML = '';
 
-      // Editable collection name
-      const nameInput = document.createElement('input');nt.createElement('input');
-      nameInput.type = 'text';
-      nameInput.value = s.name || '(untitled)';'(untitled)';
-      nameInput.className = 'tab';
-      nameInput.title = 'Click to rename';
-      nameInput.addEventListener('change', async () => {) => {
-        s.name = nameInput.value.trim() || s.name;.trim() || s.name;
-        await persistSession(s);ssion(s);
-        updateTabsUI();
-        if (s.id === activeSessionId) {
-          collectionTitleInput.value = s.name; // Sync global collection title collectionTitleInput.value = s.name; // Sync global collection title
-        }
-      });
-      // Prevent clicks on the inline input from bubbling and activating the sessionng the session
-      nameInput.addEventListener('click', ev => ev.stopPropagation());      nameInput.addEventListener('click', ev => ev.stopPropagation());
+  Object.values(sessions).forEach(s => {
+    const li = document.createElement('li');
+    li.className = 'session-tab' + (s.id === activeSessionId ? ' active' : '');
 
-      // Focus the input field when clicking the pencil button button
-      const editBtn = document.createElement('button');.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'edit';';
-      editBtn.innerHTML = '✏️';
-      editBtn.title = 'Edit collection name';
-      editBtn.addEventListener('click', (ev) => {r('click', (ev) => {
-        ev.stopPropagation();();
-        nameInput.focus();ameInput.focus();
-      });      });
-
-      // Small close icon to delete session — rely on closeSession() to show the confirmationoseSession() to show the confirmation
-      const closeBtn = document.createElement('button');.createElement('button');
-      closeBtn.type = 'button';
-      closeBtn.className = 'close';
-      closeBtn.innerHTML = '&times;';
-      closeBtn.title = 'Delete collection';
-      closeBtn.addEventListener('click', async (ev) => {er('click', async (ev) => {
-        ev.stopPropagation();
-        // closeSession will prompt the user; don't double-confirm herept the user; don't double-confirm here
-        await closeSession(s.id);wait closeSession(s.id);
-      });      });
-
-      // Clicking the list item switches to that collection/sessiono that collection/session
-      li.addEventListener('click', () => {ck', () => {
-        activateSession(s.id);ctivateSession(s.id);
-      });      });
-
-      li.appendChild(nameInput););
-      li.appendChild(editBtn);
-      li.appendChild(closeBtn););
-      listEl.appendChild(li);istEl.appendChild(li);
-    }); });
-  }  }
-
-  const summary = document.getElementById('tabsSummary');bsSummary');
-  if (summary && sessions[activeSessionId]) {
-    summary.textContent = sessions[activeSessionId].name || ''; = sessions[activeSessionId].name || '';
-  } else if (summary) {
-    summary.textContent = ''; summary.textContent = '';
-  } }
-}}
-
-async function loadPersistedSessions() {) {
-  const arr = await idbAllSessions();
-  if (Array.isArray(arr) && arr.length) {r) && arr.length) {
-    arr.forEach(s => {
-      sessions[s.id] = s;essions[s.id] = s;
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = s.name || '(untitled)';
+    nameInput.className = 'tab';
+    nameInput.title = 'Edit collection name';
+    nameInput.addEventListener('change', async (ev) => {
+      s.name = nameInput.value.trim() || s.name;
+      await persistSession(s);
+      if (s.id === activeSessionId) collectionTitleInput.value = s.name;
+      renderSessions();
     });
-    await activateSession(arr[0].id);activateSession(arr[0].id);
-  } else {
-    await createNewSession(); await createNewSession();
-  }
-  updateTabsUI(); updateTabsUI();
-}}
+    nameInput.addEventListener('click', ev => ev.stopPropagation());
 
-/* Session Manager UI wiring */
-const collectionsToggle = document.getElementById('collectionsToggle');ggle');
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'edit';
+    editBtn.innerHTML = '✏️';
+    editBtn.title = 'Edit collection name';
+    editBtn.addEventListener('click', ev => { ev.stopPropagation(); nameInput.focus(); });
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.title = 'Delete collection';
+    closeBtn.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
+      const hasData = s.items && s.items.length > 0;
+      const promptMsg = hasData ? 'Delete this collection and all its photos? This cannot be undone.' : 'Delete this empty collection?';
+      if (!confirm(promptMsg)) return;
+      // delete from memory and IDB
+      delete sessions[s.id];
+      await idbDeleteSession(s.id);
+      // if it was active, pick another or create default
+      if (activeSessionId === s.id) {
+        const keys = Object.keys(sessions);
+        if (keys.length) await activateSession(keys[0]);
+        else await createNewSession();
+      } else {
+        renderSessions();
+      }
+    });
+
+    li.addEventListener('click', () => { activateSession(s.id); });
+
+    li.appendChild(nameInput);
+    li.appendChild(editBtn);
+    li.appendChild(closeBtn);
+    listEl.appendChild(li);
+  });
+
+  const summary = document.getElementById('tabsSummary');
+  if (summary) summary.textContent = sessions[activeSessionId]?.name || '';
+}
+
+async function loadPersistedSessions() {
+  // read all sessions from indexeddb
+  const arr = await idbAllSessions();
+  if (Array.isArray(arr) && arr.length) {
+    arr.forEach(s => { sessions[String(s.id)] = s; });
+    // pick first session as active
+    const firstId = String(arr[0].id);
+    await activateSession(firstId);
+  } else {
+    // create default session and activate it
+    await createNewSession({ name: 'Default Collection' });
+  }
+  renderSessions();
+}
+
+/* Wire session UI controls (Collections panel new/close already wired elsewhere) */
+const collectionsToggle = document.getElementById('collectionsToggle');
 const collectionsPanel = document.getElementById('collections');
 const collectionsClose = document.getElementById('collectionsClose');
-const newCollectionBtn = document.getElementById('newCollectionBtn');const newCollectionBtn = document.getElementById('newCollectionBtn');
+const newCollectionBtn = document.getElementById('newCollectionBtn');
 
-collectionsToggle.addEventListener('click', () => {
-  collectionsPanel.classList.add('open'); // Add the "open" class to slide inen" class to slide in
-  collectionsPanel.setAttribute('aria-hidden', 'false');lse');
-  document.body.classList.add('collections-open');ocument.body.classList.add('collections-open');
-});
-collectionsClose.addEventListener('click', () => {
-  collectionsPanel.classList.remove('open'); // Remove the "open" class to slide outthe "open" class to slide out
-  collectionsPanel.setAttribute('aria-hidden', 'true'););
-  document.body.classList.remove('collections-open');ocument.body.classList.remove('collections-open');
-});
-newCollectionBtn.addEventListener('click', async () => {stener('click', async () => {
-  await createNewSession();
-  collectionsPanel.classList.remove('open'); // Close the panel after creating a sessionhe panel after creating a session
-  collectionsPanel.setAttribute('aria-hidden', 'true'););
-  document.body.classList.remove('collections-open');e('collections-open');
-  collectionTitleInput.focus();ollectionTitleInput.focus();
-});
-window.addEventListener('beforeunload', () => saveGlobalsToSession(activeSessionId));window.addEventListener('beforeunload', () => saveGlobalsToSession(activeSessionId));
+if (collectionsToggle) {
+  collectionsToggle.addEventListener('click', () => {
+    collectionsPanel.classList.add('open');
+    collectionsPanel.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('collections-open');
+  });
+}
+if (collectionsClose) {
+  collectionsClose.addEventListener('click', () => {
+    collectionsPanel.classList.remove('open');
+    collectionsPanel.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('collections-open');
+  });
+}
+if (newCollectionBtn) {
+  newCollectionBtn.addEventListener('click', async () => {
+    await createNewSession();
+    collectionsPanel.classList.remove('open');
+    collectionsPanel.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('collections-open');
+    collectionTitleInput.focus();
+  });
+}
 
-/* Initialize sessions on startup */
+/* ensure global save on unload */
+window.addEventListener('beforeunload', () => { if (activeSessionId) saveGlobalsToSession(activeSessionId); });
+
+/* ensure sessions load once DOM is ready (mobile reliable) */
 document.addEventListener('DOMContentLoaded', () => {
-  loadPersistedSessions(); // Ensure sessions are loaded after DOM is readyoadPersistedSessions(); // Ensure sessions are loaded after DOM is ready
+  loadPersistedSessions().catch(err => console.error('loadPersistedSessions failed', err));
 });
-</script></script>
+</script>
 
 <script>
 // Save client, project title, and photographer to state on input changeo state on input change
@@ -1627,7 +1622,7 @@ clientNameInput.addEventListener('input', () => {> {
   state.client = clientNameInput.value.trim();
   if (activeSessionId && sessions[activeSessionId]) {{
     sessions[activeSessionId].client = state.client;sionId].client = state.client;
-    persistSessions(); persistSessions();
+    persistSession(sessions[activeSessionId]);
   }
 });});
 
@@ -1635,7 +1630,7 @@ projectTitleInput.addEventListener('input', () => { {
   state.project = projectTitleInput.value.trim();
   if (activeSessionId && sessions[activeSessionId]) {
     sessions[activeSessionId].project = state.project;sionId].project = state.project;
-    persistSessions(); persistSessions();
+    persistSession(sessions[activeSessionId]);
   }
 });});
 
@@ -1643,7 +1638,7 @@ photographerNameInput.addEventListener('input', () => {
   state.photographer = photographerNameInput.value.trim();im();
   if (activeSessionId && sessions[activeSessionId]) {
     sessions[activeSessionId].photographer = state.photographer;sionId].photographer = state.photographer;
-    persistSessions(); persistSessions();
+    persistSession(sessions[activeSessionId]);
   }
 });});
 
@@ -1651,8 +1646,8 @@ collectionTitleInput.addEventListener('input', () => {ollectionTitleInput.addEve
  
   if (activeSessionId && sessions[activeSessionId]) {
     sessions[activeSessionId].name = collectionTitleInput.value.trim();sionId].name = collectionTitleInput.value.trim();
-    persistSessions();();
-    updateTabsUI(); updateTabsUI();
+    persistSession(sessions[activeSessionId]);
+    updateTabsUI();
   }
 });
 </script>t>
