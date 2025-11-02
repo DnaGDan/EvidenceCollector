@@ -3,7 +3,7 @@
   "short_name": "EvidenceCam",
   "start_url": "./evidence_pwa_v1_2.html",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
@@ -25,3 +25,4 @@
     }
   ]
 }
+
