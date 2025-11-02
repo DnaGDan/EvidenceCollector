@@ -1,260 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Site Evidence Capture (PWA) v1.2</title>
-<meta name="theme-color" content="#0f172a" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256' viewBox='0 0 256 256'%3E%3Crect width='256' height='256' rx='56' fill='%230f172a'/%3E%3Cpath d='M44 188h168M44 68h168M64 96h40M64 160h40M132 80l24 24l36-36' stroke='%23fff' stroke-width='14' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
-<link rel="manifest" href="./manifest.webmanifest" />
-<style>
-  :root{--bg:#0f172a;--card:#111827;--muted:#1f2937;--text:#e5e7eb;--accent:#22c55e;--danger:#ef4444;--warn:#f59e0b}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(15,23,42,.95),rgba(15,23,42,.75));backdrop-filter:blur(6px);border-bottom:1px solid #111}
-  .wrap{max-width:1040px;margin:0 auto;padding:16px}
-  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-  .card{background:var(--card);border:1px solid #222;border-radius:16px;padding:16px}
-  button,.btn{cursor:pointer;border:1px solid #333;background:#1f2937;color:var(--text);padding:10px 14px;border-radius:12px}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  .primary{background:#16a34a;border-color:#15803d}
-  .danger{background:#991b1b;border-color:#7f1d1d}
-  .warn{background:#b45309;border-color:#92400e}
-  select,input[type="number"],input[type="text"]{background:#111827;color:var(--text);border:1px solid #333;border-radius:10px;padding:8px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-  .thumb{position:relative;border-radius:12px;overflow:hidden;border:1px solid #333;background:#0b1220}
-  .thumb canvas{width:100%;height:auto;display:block}
-  .meta{padding:8px 10px;border-top:1px solid #222;font-size:14px}
-  .meta small{opacity:.7}
-  .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#0b4; font-size:12px; margin-left:6px}
-  .footer{opacity:.8;font-size:13px}
-  dialog{border:none;border-radius:16px;padding:0;max-width:520px;width:90%;background:#0b1220;color:var(--text)}
-  dialog header{padding:16px;border-bottom:1px solid #222}
-  dialog .content{padding:16px}
-  dialog .actions{display:flex;gap:10px;justify-content:flex-end;padding:16px;border-top:1px solid #222}
-  .count{font-variant-numeric: tabular-nums}
-  .hint{opacity:.7;font-size:12px}
-
-  /* Slide-out panel for sessions */
-  .section {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: min(360px, 92vw);
-    height: 100%;
-    transition: transform 0.28s ease; /* Smooth slide-in/out */
-    z-index: 1000;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
-    border-right: 1px solid #222;
-    overflow: auto;
-    background: var(--card);
-    padding: 16px;
-    transform: translateX(-110%); /* Hidden by default */
-  }
-  .section.open {
-    transform: translateX(0); /* Slide in when open */
-  }
-  .tab-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-  .tab {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #333;
-    border-radius: 8px;
-    background: var(--card);
-    color: var(--text);
-    cursor: pointer;
-    transition: background .2s;
-  }
-  .tab:hover {
-    background: #1f2937;
-  }
-  .tab.active {
-    background: #15803d;
-    color: #fff;
-  }
-  .close {
-    background: none;
-    border: none;
-    color: #ef4444;
-    font-size: 18px;
-    cursor: pointer;
-  }
-
-  /* Session Manager styles */
-  .sessions-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: min(360px, 92vw);
-    height: 100%;
-    background: var(--card, #1a1a2b);
-    color: var(--fg, #eef4ff);
-    border-right: 1px solid var(--border, #444c6a);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-    padding: 16px;
-    overflow-y: auto;
-    z-index: 1000;
-    transform: translateX(-110%); /* Hidden by default */
-    transition: transform 0.28s ease;
-  }
-  .sessions-panel.open {
-    transform: translateX(0); /* Visible when open */
-  }
-  body.sessions-open #sessionsToggle {
-    opacity: 1; /* Ensure the button is fully visible */
-    pointer-events: auto; /* Allow interaction */
-  }
-  .sessions-header-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .sessions-title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-  }
-  .flex-spacer {
-    flex: 1;
-  }
-  .sessions-hint {
-    margin-top: 6px;
-    font-size: 0.9rem;
-    color: var(--muted, #8b93b8);
-  }
-  .sessions-new-btn-row {
-    margin-top: 8px;
-  }
-  .sessions-list {
-    list-style: none;
-    padding: 0;
-    margin-top: 10px;
-  }
-  .session-tab {
-    display: inline-flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 8px;
-    padding: 8px 10px;
-    margin-bottom: 8px;
-    border-radius: 10px;
-    border: 1px solid var(--border, #444c6a);
-    background: var(--card, #1a1a2b);
-    color: var(--fg, #eef4ff);
-    font-weight: 600;
-    text-align: left;
-    cursor: pointer;
-  }
-  .session-tab.active {
-    outline: 3px solid var(--focus-ring, #7aa9f6);
-    outline-offset: 0;
-  }
-  .session-close-btn {
-    background: transparent;
-    border: 0;
-    color: var(--muted, #8b93b8);
-    cursor: pointer;
-    padding: 0 4px;
-    font-size: 0.9rem;
-    line-height: 1;
-  }
-  .session-summary-chip {
-    display: inline-block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--muted, #8b93b8);
-    border: 1px solid var(--border, #444c6a);
-    background: rgba(127, 146, 190, 0.08);
-    border-radius: 999px;
-    padding: 2px 8px;
-    max-width: 40vw;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* Update styles for the renamed Collections panel */
-  .collections-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: min(360px, 92vw);
-    height: 100%;
-    background: var(--card, #1a1a2b);
-    color: var(--fg, #eef4ff);
-    border-right: 1px solid var(--border, #444c6a);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-    padding: 16px;
-    overflow-y: auto;
-    z-index: 1000;
-    transform: translateX(-110%); /* Hidden by default */
-    transition: transform 0.28s ease;
-  }
-  .collections-panel.open {
-    transform: translateX(0); /* Slide in when open */
-  }
-  body.collections-open #collectionsToggle {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  /* Collection Parameters slide-out (left) */
-  .params-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: min(360px, 92vw);
-    height: 100%;
-    background: var(--card);
-    color: var(--text);
-    border-right: 1px solid #222;
-    box-shadow: 8px 0 24px rgba(0,0,0,0.6);
-    padding: 16px;
-    transform: translateX(-110%);
-    transition: transform 0.28s ease;
-    z-index: 1200;
-    overflow-y: auto;
-  }
-  .params-panel.open { transform: translateX(0); }
-  .params-panel h3 { margin:0 0 8px; font-size:1rem; font-weight:600; }
-  .params-panel .field { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
-
-  /* location button state colours */
-  .btn.loc-on { background:#16a34a !important; border-color:#15803d !important; color:#fff; }
-  .btn.loc-off { background:#991b1b !important; border-color:#7f1d1d !important; color:#fff; }
-
-  /* make svg inside control inherit button foreground */
-  .btn svg { vertical-align: middle; fill: none; stroke: currentColor; }
-
-  /* icon-only button style (tight square for header icons) */
-  .btn.icon-btn { width:40px; height:40px; padding:6px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; }
-
-  /* export button: inline icon + label, slightly tighter */
-  .btn.export { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:12px; font-weight:600; }
-  .btn.export svg { width:18px; height:18px; }
-
-  /* group two buttons so they look related (export + settings) */
-  .btn.group-left { border-top-right-radius:0; border-bottom-right-radius:0; margin-left:8px; }
-  .btn.group-right { border-top-left-radius:0; border-bottom-left-radius:0; margin-left:0; border-left:1px solid rgba(0,0,0,0.25); }
-
-  /* keep grouped header buttons together on small screens */
-  .btn-group {
-    display: inline-flex;
-    flex-wrap: nowrap;
-    gap: 0;
-    align-items: center;
-    white-space: nowrap;
-  }
-  .btn-group .btn {
-    flex: 0 0 auto; /* do not grow or shrink */
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Site Evidence Capture (PWA) v1.2</title>
+  <meta name="theme-color" content="#0f172a" />
+  <!-- static manifest removed to avoid conflicts with runtime manifest (the page generates a manifest blob) -->
+  <style>
+    /* UI orientation helpers (small tweaks for portrait vs landscape) */
+    body.orientation-portrait .wrap { max-width: 760px; transition: max-width .18s ease; }
+    body.orientation-landscape .wrap { max-width: 1040px; transition: max-width .18s ease; }
+    /* Small header reflow on narrow portrait */
+    body.orientation-portrait header .row { gap:8px; }
+    body.orientation-landscape header .row { gap:12px; }
+    /* Ensure gallery grid behaves sensibly when orientation changes */
+    body.orientation-portrait .grid { grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); }
+    body.orientation-landscape .grid { grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); }
+  </style>
 </head>
 <body>
 <header>
@@ -340,6 +102,21 @@
             <option value="landscape" selected>Landscape (A4)</option>
           </select>
         </label>
+        <!-- New: PWA install orientation preference -->
+        <label style="display:flex;align-items:center;gap:8px">
+          <input id="prefLandscapeInstall" type="checkbox" />
+          <span style="font-size:13px">Allow landscape installs (PWA)</span>
+        </label>
+        <!-- New: UI orientation mode (auto = follow device, or force a mode) -->
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:13px">UI orientation mode</span>
+          <select id="uiOrientationMode" style="width:100%">
+            <option value="auto">Auto (follow device)</option>
+            <option value="portrait">Force portrait</option>
+            <option value="landscape">Force landscape</option>
+          </select>
+        </label>
+         <div><small class="hint">When enabled, the generated manifest will prefer landscape for installations. Existing installed PWAs may need re-install to pick up this change.</small></div>
         <label>Margins (mm):
           <input id="margins" type="number" min="0" max="30" value="10" style="width:100%" />
         </label>
@@ -350,8 +127,12 @@
       </div>
     </div>
 
-    <p class="footer" style="margin:8px 0 0">
-      Camera is forced to landscape: portrait images are auto-rotated. Captures stored offline (IndexedDB). Exports honour layout and A4 sizing.
+    <p class="footer" style="margin:8px 0 0; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <span id="appVersion" style="opacity:.95;font-weight:600">v1.2</span>
+      <span id="installStatus" style="opacity:.85;font-size:13px;color:var(--muted)">Not installed</span>
+      <span style="flex:1 1 auto;color:var(--muted);font-size:13px">
+        App prefers portrait orientation on mobile (you can enable landscape installs in Settings). Captures stored offline (IndexedDB). Exports honour layout and A4 sizing.
+      </span>
     </p>
   </section>
 
@@ -440,73 +221,93 @@
 <script>
 /* ---------------- PWA: manifest + service worker (self-contained) ---------------- */
 (function bootstrapPWA(){
-  const manifest = {
-    "name": "Site Evidence Capture",
-    "short_name": "EvidenceCam",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#0f172a",
-    "theme_color": "#0f172a",
-    "orientation": "landscape",
-    "icons": [
-      {"src":"icon-192.png","sizes":"192x192","type":"image/png"},
-      {"src":"icon-512.png","sizes":"512x512","type":"image/png"},
-      {"src":"icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable any"}
-    ]
-  };
-  const manifestURL = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type:'application/json'}));
-  document.head.appendChild(Object.assign(document.createElement('link'), { rel:'manifest', href: manifestURL }));
-
-  function makeIcon(size){
-    const c=document.createElement('canvas'); c.width=c.height=size;
-    const g=c.getContext('2d');
-    g.fillStyle='#0f172a'; g.fillRect(0,0,size,size);
-    g.strokeStyle='#22c55e'; g.lineWidth=size*0.06;
-    g.strokeRect(size*0.14,size*0.14,size*0.72,size*0.72);
-    g.fillStyle='#22c55e'; g.fillRect(size*0.25,size*0.55,size*0.5,size*0.12);
-    return c.toDataURL('image/png');
+  // Create/apply manifests via a helper so we can update orientation preference at runtime.
+  function applyManifestOrientation(orientation) {
+    const manifest = {
+      name: "Site Evidence Capture",
+      short_name: "EvidenceCam",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#0f172a",
+      theme_color: "#0f172a",
+      orientation: orientation, // 'portrait' by default, can be changed to 'landscape'
+      icons: [
+        { src:"icon-192.png", sizes:"192x192", type:"image/png" },
+        { src:"icon-512.png", sizes:"512x512", type:"image/png" },
+        { src:"icon-maskable.png", sizes:"512x512", type:"image/png", purpose:"maskable any" }
+      ]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestURL = URL.createObjectURL(manifestBlob);
+    // update or create link#app-manifest
+    let link = document.getElementById('app-manifest');
+    if (!link) {
+      link = document.createElement('link');
+      link.id = 'app-manifest';
+      link.rel = 'manifest';
+      document.head.appendChild(link);
+    } else {
+      // revoke previous object URL if we created one earlier
+      try { if (link._blobUrl) URL.revokeObjectURL(link._blobUrl); } catch(e){}
+    }
+    link.href = manifestURL;
+    link._blobUrl = manifestURL;
   }
-  document.head.appendChild(Object.assign(document.createElement('link'),{rel:'icon',sizes:'192x192',href:makeIcon(192)}));
-  document.head.appendChild(Object.assign(document.createElement('link'),{rel:'icon',sizes:'512x512',href:makeIcon(512)}));
 
-  const swCode = `
-  const CACHE_NAME='evidencecam-v4';
-  const ASSETS=[
-    './',
-    './pptx_table.js',
-    './brownfield_logo.png',
-    'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'
-  ];
-  self.addEventListener('install',e=>{
-    e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
-  });
-  self.addEventListener('activate',e=>{
-    e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))) .then(()=>self.clients.claim()));
-  });
-  self.addEventListener('fetch',e=>{
-    e.respondWith(
-      caches.match(e.request).then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(e.request).then(networkResponse => {
-          // Caching for non-asset requests (e.g. future API calls)
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(e.request, responseToCache);
-          });
-          return networkResponse;
-        }).catch(() => {
-          // Fallback for failed fetch, e.g. a generic offline page/image
-          // For now, just fails, but could return a placeholder from cache.
-        });
-      })
-    );
-  });
-  `;
-  const swURL = URL.createObjectURL(new Blob([swCode], {type:'text/javascript'}));
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register(swURL); }
-})();
+  // apply initial manifest orientation based on saved preference (defaults to portrait)
+  const storedPref = localStorage.getItem('prefLandscapeInstall') === 'true';
+  applyManifestOrientation(storedPref ? 'landscape' : 'portrait');
+
+   function makeIcon(size){
+     const c=document.createElement('canvas'); c.width=c.height=size;
+     const g=c.getContext('2d');
+     g.fillStyle='#0f172a'; g.fillRect(0,0,size,size);
+     g.strokeStyle='#22c55e'; g.lineWidth=size*0.06;
+     g.strokeRect(size*0.14,size*0.14,size*0.72,size*0.72);
+     g.fillStyle='#22c55e'; g.fillRect(size*0.25,size*0.55,size*0.5,size*0.12);
+     return c.toDataURL('image/png');
+   }
+   document.head.appendChild(Object.assign(document.createElement('link'),{rel:'icon',sizes:'192x192',href:makeIcon(192)}));
+   document.head.appendChild(Object.assign(document.createElement('link'),{rel:'icon',sizes:'512x512',href:makeIcon(512)}));
+ 
+   const swCode = `
+   const CACHE_NAME='evidencecam-v4';
+   const ASSETS=[
+     './',
+     './pptx_table.js',
+     './brownfield_logo.png',
+     'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'
+   ];
+   self.addEventListener('install',e=>{
+     e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
+   });
+   self.addEventListener('activate',e=>{
+     e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))) .then(()=>self.clients.claim()));
+   });
+   self.addEventListener('fetch',e=>{
+     e.respondWith(
+       caches.match(e.request).then(cachedResponse => {
+         if (cachedResponse) {
+           return cachedResponse;
+         }
+         return fetch(e.request).then(networkResponse => {
+           // Caching for non-asset requests (e.g. future API calls)
+           const responseToCache = networkResponse.clone();
+           caches.open(CACHE_NAME).then(cache => {
+             cache.put(e.request, responseToCache);
+           });
+           return networkResponse;
+         }).catch(() => {
+           // Fallback for failed fetch, e.g. a generic offline page/image
+           // For now, just fails, but could return a placeholder from cache.
+         });
+       })
+     );
+   });
+   `;
+   const swURL = URL.createObjectURL(new Blob([swCode], {type:'text/javascript'}));
+   if('serviceWorker' in navigator){ navigator.serviceWorker.register(swURL); }
+ })();
 </script>
 
 <script>
@@ -813,7 +614,7 @@ function latLonToBNG(lat, lon){
   const rho = aA * F0 * (1 - e2A) / Math.pow(1 - e2A * Math.sin(latA)*Math.sin(latA), 1.5);
   const eta2 = nu / rho - 1;
 
-  const M = aA * F0 * (
+  const M = bA * F0 * (
     (1 + n + (5/4)*n*n + (5/4)*n*n*n) * (latA - lat0)
     - (3*n + 3*n*n + (21/8)*n*n*n) * Math.sin(latA - lat0) * Math.cos(latA + lat0)
     + ((15/8)*n*n + (15/8)*n*n*n) * Math.sin(2*(latA - lat0)) * Math.cos(2*(latA + lat0))
@@ -1612,6 +1413,7 @@ window.addEventListener('beforeunload', () => { if (activeSessionId) saveGlobals
 
 /* ensure sessions load once DOM is ready (mobile reliable) */
 document.addEventListener('DOMContentLoaded', () => {
+
   loadPersistedSessions().catch(err => console.error('loadPersistedSessions failed', err));
 });
 </script>
@@ -1652,6 +1454,55 @@ collectionTitleInput.addEventListener('input', () => {
   }
 });
 </script>
-</body>
-</html>
+
+<!-- App version + installation status script -->
+<script>
+// filepath: c:\Users\Dan Gates\OneDrive - Brownfield Solutions Ltd\Apps\Evidence Collector\evidence_pwa_v1_2.html
++(function appVersionAndInstallStamp(){
+  const APP_VERSION = 'v1.2';
+  const verEl = document.getElementById('appVersion');
+  const statusEl = document.getElementById('installStatus');
+  if(verEl) verEl.textContent = APP_VERSION;
+
+  function setInstalledState(installed){
+    if(!statusEl) return;
+    if(installed){
+      statusEl.textContent = 'Installed';
+      statusEl.style.color = 'var(--accent)';
+      statusEl.title = 'App is installed (standalone)';
+    }else{
+      statusEl.textContent = 'Not installed';
+      statusEl.style.color = 'var(--muted)';
+      statusEl.title = 'App is not installed';
+    }
+  }
+
+  // initial detection (standalone media query or iOS navigator.standalone)
+  function detectInstalled(){
+    try{
+      const mm = window.matchMedia && window.matchMedia('(display-mode: standalone)');
+      const isStandalone = (mm && mm.matches) || window.navigator.standalone === true;
+      setInstalledState(!!isStandalone);
+    }catch(e){
+      setInstalledState(false);
+    }
+  }
+
+  // Update on relevant events
+  window.addEventListener('appinstalled', ()=> setInstalledState(true));
+  // listens for changes to display-mode (some browsers)
+  try{
+    const mq = window.matchMedia('(display-mode: standalone)');
+    if(mq && typeof mq.addEventListener === 'function'){
+      mq.addEventListener('change', ev => setInstalledState(ev.matches));
+    }else if(mq && typeof mq.addListener === 'function'){
+      mq.addListener(ev => setInstalledState(ev.matches));
+    }
+  }catch(e){}
+
+  // initial set on DOM ready
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', detectInstalled);
+  else detectInstalled();
+})();
+</script>
 
