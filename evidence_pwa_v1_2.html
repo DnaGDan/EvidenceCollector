@@ -395,6 +395,19 @@
   }
   #captureGroup .btn.action svg { width: 22px; height: 22px; }
   #captureGroup .btn.group-left { margin-left: 0; } /* flush left edge */
+
+  /* Location warning banner (shown when location is OFF) */
+  .loc-warning {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(239,68,68,0.12); /* red-ish */
+    border: 1px solid rgba(239,68,68,0.45);
+    color: #fecaca;
+    font-weight: 700;
+  }
+  .loc-warning.show { display: block; }
 </style>
 </head>
 <body>
@@ -519,6 +532,11 @@
       </div>
     </div>
 
+    <!-- New: location warning banner (appears when location is OFF) -->
+    <div id="locWarning" class="loc-warning" role="alert">
+      Location is OFF. Enable location (red pin icon in header) to record BNG coordinates and timestamps.
+    </div>
+
     <p class="footer" style="margin:8px 0 0">
       Camera is forced to landscape: portrait images are auto-rotated. Captures stored offline (IndexedDB). Exports honour layout and A4 sizing.
     </p>
@@ -577,20 +595,21 @@
 
   <div style="margin-top:8px">
     <div class="field">
-      <label style="font-size:12px">Collection name</label>
-      <input id="params_collectionTitle" type="text" placeholder="Collection name" />
+      <label style="font-size:12px">Job Name</label>
+      <input id="params_collectionTitle" type="text" placeholder="Job Name" />
     </div>
     <div class="field">
+      <!-- CHANGED label from Job No. to Client -->
       <label style="font-size:12px">Client</label>
       <input id="params_clientName" type="text" placeholder="Client" />
     </div>
     <div class="field">
-      <label style="font-size:12px">Project Title</label>
-      <input id="params_projectTitle" type="text" placeholder="Project title" />
+      <label style="font-size:12px">Job No.</label>
+      <input id="params_projectTitle" type="text" placeholder="Job No." />
     </div>
     <div class="field">
-      <label style="font-size:12px">Photographer</label>
-      <input id="params_photographerName" type="text" placeholder="Photographer" />
+      <label style="font-size:12px">Photoboard Title</label>
+      <input id="params_photographerName" type="text" placeholder="Photoboard Title" />
     </div>
     <div style="margin-top:12px;text-align:right">
       <button id="paramsSave" class="btn primary">Save</button>
@@ -783,230 +802,72 @@ function setLocationButtonState(enabled, accOrMsg){
     const title = (typeof accOrMsg === 'number') ? `Disable location (≈${accOrMsg} m)` : 'Disable location';
     btn.setAttribute('title', title);
     btn.setAttribute('aria-pressed','true');
+    showLocWarning(false);
   }else{
     btn.classList.remove('loc-on'); btn.classList.add('loc-off');
     const title = (typeof accOrMsg === 'string') ? accOrMsg : 'Enable location';
     btn.setAttribute('title', title);
     btn.setAttribute('aria-pressed','false');
+    showLocWarning(true, 'Location is OFF. Enable location (red pin icon in header) to record BNG coordinates and timestamps.');
   }
 }
 
-/* initialize location button visual state (off by default) */
-document.addEventListener('DOMContentLoaded', ()=> {
-  setLocationButtonState(false);
-});
-
-/* ---------------- Helpers needed by capture / UI ---------------- */
-function escapeHTML(s){ return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
-function fmtCount(n){ return `${n} item${n===1?'':'s'}`; }
-function toDataURL(canvas, quality=0.92){ return canvas.toDataURL('image/jpeg', quality); }
-
-function dataURLtoBlob(dataURL){
-  const parts = dataURL.split(',');
-  const mime = parts[0].match(/:(.*?);/)[1];
-  const binStr = atob(parts[1]);
-  const len = binStr.length;
-  const u8 = new Uint8Array(len);
-  for(let i=0;i<len;i++) u8[i]=binStr.charCodeAt(i);
-  return new Blob([u8], {type:mime});
+/* NEW: toggle the warning banner */
+function showLocWarning(show, msg){
+  const el = document.getElementById('locWarning');
+  if(!el) return;
+  if(msg) el.textContent = msg;
+  el.classList.toggle('show', !!show);
 }
 
-/** Normalize an image file to a landscape canvas (rotate if portrait), scale to maxW
-    - Loads image reliably into an HTMLImageElement
-    - Preserves aspect ratio
-    - Rotates portrait sources 90° to yield landscape output
-*/
-async function normalizeToLandscape(file, maxW){
-  // helper to load an image element from a File/Blob
-  const loadImg = (blob) => new Promise((res, rej) => {
-    const img = new Image();
-    img.onload = () => res(img);
-    img.onerror = (e) => rej(e);
-    // Avoid tainting from cross-origin; blob URL is same-origin
-    img.src = URL.createObjectURL(blob);
-  });
-
-  const img = await loadImg(file);
-
-  // source dimensions
-  const sw = img.width;
-  const sh = img.height;
-
-  // determine if source is portrait and compute scale based on longest side
-  const sourceLong = Math.max(sw, sh);
-  const scale = Math.min(1, (maxW || 1920) / sourceLong);
-
-  // When rotating a portrait, output dimensions swap
-  const rotate = sh > sw;
-  const outW = Math.round((rotate ? sh : sw) * scale);
-  const outH = Math.round((rotate ? sw : sh) * scale);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = outW;
-  canvas.height = outH;
-  const ctx = canvas.getContext('2d');
-
-  if (rotate) {
-    // Rotate 90deg clockwise and draw the scaled image centered.
-    ctx.save();
-    // translate to canvas center and rotate
-    ctx.translate(outW / 2, outH / 2);
-    ctx.rotate(Math.PI / 2);
-    // draw the image centered at the origin, scaled
-    const dw = Math.round(sw * scale);
-    const dh = Math.round(sh * scale);
-    ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
-    ctx.restore();
-  } else {
-    // Landscape: draw scaled to fit canvas
-    const dw = Math.round(sw * scale);
-    const dh = Math.round(sh * scale);
-    // center within canvas (should equal canvas size normally)
-    const dx = Math.round((outW - dw) / 2);
-    const dy = Math.round((outH - dh) / 2);
-    ctx.drawImage(img, dx, dy, dw, dh);
+/* initialize location: try to enable on startup (will prompt if needed) */
+async function ensureLocationOnStartup(){
+  if(!navigator.geolocation){
+    setLocationButtonState(false, 'Location unsupported by this browser.');
+    return;
   }
-
-  // release object URL created by loadImg (best-effort)
-  try { URL.revokeObjectURL(img.src); } catch (e) {}
-
-  return canvas;
-}
-
-/* ---------------- British National Grid conversion helpers ----------------
-   WGS84 -> OSGB36 Helmert transform + Transverse Mercator
-   returns {easting, northing}
-*/
-function deg2rad(d){ return d * Math.PI/180; }
-function latLonToBNG(lat, lon){
-  const aW = 6378137.0, bW = 6356752.3141;
-  const aA = 6377563.396, bA = 6356256.909;
-  const tx = -446.448, ty = 125.157, tz = -542.060;
-  const rxSec = -0.1502, rySec = -0.2470, rzSec = -0.8421;
-  const sppm = 20.4894;
-
-  const latR = deg2rad(lat), lonR = deg2rad(lon);
-  const e2W = (aW*aW - bW*bW) / (aW*aW);
-  const vW = aW / Math.sqrt(1 - e2W * Math.sin(latR)*Math.sin(latR));
-  const xW = vW * Math.cos(latR) * Math.cos(lonR);
-  const yW = vW * Math.cos(latR) * Math.sin(lonR);
-  const zW = (vW * (1 - e2W)) * Math.sin(latR);
-
-  const rx = rxSec / 3600 * Math.PI/180;
-  const ry = rySec / 3600 * Math.PI/180;
-  const rz = rzSec / 3600 * Math.PI/180;
-  const s = sppm * 1e-6 + 1;
-
-  const xO = tx + s*( xW + (-rz)*yW + ry*zW );
-  const yO = ty + s*( rz*xW + yW + (-rx)*zW );
-  const zO = tz + s*( (-ry)*xW + rx*yW + zW );
-
-  const e2A = (aA*aA - bA*bA) / (aA*aA);
-  let p = Math.sqrt(xO*xO + yO*yO);
-  let latA = Math.atan2(zO, p * (1 - e2A));
-  let latPrev = 1e9, vA;
-  while(Math.abs(latA - latPrev) > 1e-12){
-    latPrev = latA;
-    vA = aA / Math.sqrt(1 - e2A * Math.sin(latA)*Math.sin(latA));
-    latA = Math.atan2(zO + e2A * vA * Math.sin(latA), p);
-  }
-  const lonA = Math.atan2(yO, xO);
-
-  const lat0 = deg2rad(49.0), lon0 = deg2rad(-2.0);
-  const N0 = -100000.0, E0 = 400000.0, F0 = 0.9996012717;
-  const n = (aA - bA) / (aA + bA);
-  const nu = aA * F0 / Math.sqrt(1 - e2A * Math.sin(latA)*Math.sin(latA));
-  const rho = aA * F0 * (1 - e2A) / Math.pow(1 - e2A * Math.sin(latA)*Math.sin(latA), 1.5);
-  const eta2 = nu / rho - 1;
-
-  const M = bA * F0 * (
-    (1 + n + (5/4)*n*n + (5/4)*n*n*n) * (latA - lat0)
-    - (3*n + 3*n*n + (21/8)*n*n*n) * Math.sin(latA - lat0) * Math.cos(latA + lat0)
-    + ((15/8)*n*n + (15/8)*n*n*n) * Math.sin(2*(latA - lat0)) * Math.cos(2*(latA + lat0))
-    - (35/24)*n*n*n * Math.sin(3*(latA - lat0)) * Math.cos(3*(latA + lat0))
-  );
-
-  const I = M + N0;
-  const II = (nu/2) * Math.sin(latA) * Math.cos(latA);
-  const III = (nu/24) * Math.sin(latA) * Math.pow(Math.cos(latA),3) * (5 - Math.tan(latA)*Math.tan(latA) + 9*eta2);
-  const IIIA = (nu/720) * Math.sin(latA) * Math.pow(Math.cos(latA),5) * (61 - 58*Math.tan(latA)*Math.tan(latA) + Math.pow(Math.tan(latA),4));
-  const IV = nu * Math.cos(latA);
-  const V = (nu/6) * Math.pow(Math.cos(latA),3) * (nu/rho - Math.tan(latA)*Math.tan(latA));
-  const VI = (nu/120) * Math.pow(Math.cos(latA),5) * (5 - 18*Math.tan(latA)*Math.tan(latA) + Math.pow(Math.tan(latA),4) + 14*eta2 - 58*Math.tan(latA)*Math.tan(latA)*eta2);
-
-  const dLon = lonA - lon0;
-  const dLon2 = dLon*dLon, dLon3 = dLon2*dLon, dLon4 = dLon3*dLon, dLon5 = dLon4*dLon, dLon6 = dLon5*dLon;
-
-  const N = I + II*dLon2 + III*dLon4 + IIIA*dLon6;
-  const E = E0 + IV*dLon + V*dLon3 + VI*dLon5;
-
-  return { easting: Math.round(E), northing: Math.round(N) };
-}
-
-/* getCurrentPosition-style single read (used as quick attempt when saving) */
-function requestLocationOnce(){
-  if(!navigator.geolocation) return Promise.resolve(null);
-  return new Promise((resolve)=>{
-    navigator.geolocation.getCurrentPosition(pos=>{
-      resolve(pos);
-    }, err=>{
-      console.warn('Geolocation getCurrentPosition failed', err);
-      resolve(null);
-    }, { enableHighAccuracy:true, timeout:10000, maximumAge:0 });
-  });
-}
-
-/* Render gallery from state.items (uses item._preview canvas if present) */
-function renderGallery(){
-  const gallery = document.getElementById('gallery');
-  gallery.innerHTML = '';
-  state.items.forEach(item=>{
-    const card=document.createElement('div'); card.className='thumb';
-    const c=document.createElement('canvas'); c.width=item.w || (item._preview && item._preview.width) || 800; c.height=item.h || (item._preview && item._preview.height) || 600;
-    const ctx = c.getContext('2d');
-    if(item._preview) ctx.drawImage(item._preview,0,0);
-    const meta=document.createElement('div'); meta.className='meta';
-    const when=item.whenISO?new Date(item.whenISO):new Date(item.created);
-    let gpsText = '';
-    if(item.gps){
-      if(typeof item.gps.bngE !== 'undefined'){
-        gpsText = ` • ${fmtBNGDisplay(item.gps)}`;
-      }else if(typeof item.gps.lat === 'number' && typeof item.gps.lon === 'number'){
-        gpsText = ` • Lat ${item.gps.lat.toFixed(6)}, Lon ${item.gps.lon.toFixed(6)} (≈${Math.round(item.gps.accuracy||3)} m)`;
+  try{
+    if(navigator.permissions && navigator.permissions.query){
+      const perm = await navigator.permissions.query({ name: 'geolocation' });
+      const handle = async () => {
+        if(perm.state === 'granted'){
+          locationEnabled = true;
+          startWatch();
+          setLocationButtonState(true);
+        }else if(perm.state === 'prompt'){
+          const pos = await requestLocationOnce();
+          if(pos){
+            locationEnabled = true;
+            startWatch();
+            setLocationButtonState(true, Math.round(pos.coords.accuracy||0));
+          }else{
+            setLocationButtonState(false, 'Location is OFF. Enable to record BNG.');
+          }
+        }else{
+          setLocationButtonState(false, 'Location permission denied. Enable in browser settings.');
+        }
+      };
+      perm.onchange = handle;
+      await handle();
+    }else{
+      const pos = await requestLocationOnce();
+      if(pos){
+        locationEnabled = true;
+        startWatch();
+        setLocationButtonState(true, Math.round(pos.coords.accuracy||0));
+      }else{
+        setLocationButtonState(false, 'Location is OFF. Enable to record BNG.');
       }
     }
-    meta.innerHTML = `<div><strong>${escapeHTML(item.desc||'(no description)')}</strong><span class="badge">${c.width}×${c.height}</span></div>
-      <small>${when.toLocaleString()}${gpsText} • ${escapeHTML(item.tech||'')} • ${escapeHTML(item.loc||'')}</small>`;
-    
-    // Add delete button for individual image removal (removes from current collection)
-    const deleteBtn = document.createElement('button');
-    deleteBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    deleteBtn.style.position = 'absolute';
-    deleteBtn.style.top = '5px';
-    deleteBtn.style.right = '5px';
-    deleteBtn.style.background = 'transparent';
-    deleteBtn.style.border = 'none';
-    deleteBtn.style.borderRadius = '0';
-    deleteBtn.style.width = '20px';
-    deleteBtn.style.height = '20px';
-    deleteBtn.style.cursor = 'pointer';
-    deleteBtn.title = 'Delete this image';
-    deleteBtn.addEventListener('click', async () => {
-      if (!confirm('Are you sure you want to delete this image from this collection?')) return;
-      const index = state.items.indexOf(item);
-      if (index > -1) {
-        state.items.splice(index, 1);
-        saveGlobalsToSession(activeSessionId);
-        renderGallery();
-      }
-    });
-    
-    card.appendChild(c); card.appendChild(meta); card.appendChild(deleteBtn);
-    gallery.appendChild(card);
-  });
-  const countEl = document.getElementById('count');
-  countEl.textContent = fmtCount(state.items.length);
+  }catch(e){
+    setLocationButtonState(false, 'Location is OFF. Enable to record BNG.');
+  }
 }
+
+/* REPLACED: was setting OFF by default; now attempt to enable on load */
+document.addEventListener('DOMContentLoaded', ()=> {
+  ensureLocationOnStartup();
+});
 
 fileInput.addEventListener('change', async (e)=>{
   const f=e.target.files?.[0]; if(!f) return;
@@ -1267,10 +1128,11 @@ async function buildPPTXBlob(fileName){
       footerCursor += footerLabelH + labelBoxGap + footerBoxH + footerGapY;
     }
 
+    // CHANGED LABELS FOR EXPORT FOOTER
     drawFooterField('CLIENT', client || '');
-    drawFooterField('PROJECT TITLE', project || '');
-    drawFooterField('COLLECTION', collection || '');
-    drawFooterField('PHOTOGRAPHER', photographer || '');
+    drawFooterField('JOB NO.', project || '');
+    drawFooterField('JOB NAME', collection || '');
+    drawFooterField('PHOTOBOARD TITLE', photographer || '');
 
     // Page number (remains at the absolute bottom of the panel)
     slide.addText(`Page ${pageNumber}`, { x: sideX, y: panelTopY + panelH - 0.3, w: sideW - 0.1, h: 0.2, fontSize: 8, color: textGrey, align: 'right' });
@@ -1313,21 +1175,49 @@ async function buildPPTXBlob(fileName){
 
       try {
         slide.addImage({ data: item.dataURL, x: imgX, y: imgY, w: imgW, h: imgH });
-      } catch (e) {
-        console.warn('Failed to add image to slide', e);
+      } catch (e) { console.warn('Failed to add image to slide', e); }
+
+      globalPhotoIndex++;
+      const dt = item.whenISO ? new Date(item.whenISO) : new Date(item.created || Date.now());
+      const ts = dt.toLocaleString(); // local timestamp
+      const photoLine = `Photo ${globalPhotoIndex} • ${ts}`;
+
+      let posLine = '';
+      if (item.gps && typeof item.gps.bngE !== 'undefined') {
+        posLine = `BNG: E ${item.gps.bngE} N ${item.gps.bngN}`;
+      } else if (item.gps && typeof item.gps.lat === 'number') {
+        posLine = `Lat ${item.gps.lat.toFixed(6)}, Lon ${item.gps.lon.toFixed(6)}`;
       }
 
-      // Add text below the image: photo number and BNG location
-      globalPhotoIndex++;
-      let locationText = '';
-      if (item.gps && typeof item.gps.bngE !== 'undefined') {
-        locationText = `BNG: E ${item.gps.bngE} N ${item.gps.bngN}`;
-      } else if (item.gps && typeof item.gps.lat === 'number') {
-        locationText = `Lat ${item.gps.lat.toFixed(6)}, Lon ${item.gps.lon.toFixed(6)}`;
+      const captionAreaH = cellH - imageH - 0.1;
+      const line1H = Math.min(0.18, captionAreaH * 0.5);
+      const line2Y = textY + line1H + 0.02;
+      const line2H = Math.max(0.14, captionAreaH - line1H - 0.04);
+
+      try {
+        slide.addText(photoLine, {
+          x: cellX + 0.05,
+          y: textY,
+          w: cellW - 0.1,
+          h: line1H,
+          fontSize: 9,
+          color: textGrey,
+          align: 'center'
+        });
+        if (posLine) {
+          slide.addText(posLine, {
+            x: cellX + 0.05,
+            y: line2Y,
+            w: cellW - 0.1,
+            h: line2H,
+            fontSize: 8,
+            color: textGrey,
+            align: 'center'
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to add caption lines', e);
       }
-      const photoText = `Photo ${globalPhotoIndex}`;
-      const fullText = locationText ? `${photoText} - ${locationText}` : photoText;
-      slide.addText(fullText, { x: cellX + 0.05, y: textY, w: cellW - 0.1, h: cellH - imageH - 0.1, fontSize: 8, color: textGrey, align: 'center' });
     });
 
     // Build descItems for this slide using the sequential globalPhotoIndex.
@@ -1392,85 +1282,85 @@ btnExportPPTX.addEventListener('click', async ()=>{
 </script>
 
 <script>
-/* Params panel wiring: toggle, populate, save (syncs to main inputs, state and sessions) */
-(function paramsPanelInit(){
-  const paramsToggle = document.getElementById('paramsToggle');
-  const paramsPanel = document.getElementById('paramsPanel');
-  const paramsClose = document.getElementById('paramsClose');
-  const paramsSave = document.getElementById('paramsSave');
+  /* Params panel wiring: toggle, populate, save (syncs to main inputs, state and sessions) */
+  (function paramsPanelInit(){
+    const paramsToggle = document.getElementById('paramsToggle');
+    const paramsPanel = document.getElementById('paramsPanel');
+    const paramsClose = document.getElementById('paramsClose');
+    const paramsSave = document.getElementById('paramsSave');
 
-  const pCollection = document.getElementById('params_collectionTitle');
-  const pClient     = document.getElementById('params_clientName');
-  const pProject    = document.getElementById('params_projectTitle');
-  const pPhotog     = document.getElementById('params_photographerName');
+    const pCollection = document.getElementById('params_collectionTitle');
+    const pClient     = document.getElementById('params_clientName');
+    const pProject    = document.getElementById('params_projectTitle');
+    const pPhotog     = document.getElementById('params_photographerName');
 
-  // Helper: open panel and populate values from current globals / inputs
-  function openParams(){
-    // populate from active session if available, otherwise from main inputs/state
-    const s = sessions[activeSessionId] || {};
-    pCollection.value = s.name || collectionTitleInput.value || '';
-    pClient.value = s.client || clientNameInput.value || state.client || '';
-    pProject.value = s.project || projectTitleInput.value || state.project || '';
-    pPhotog.value = s.photographer || photographerNameInput.value || state.photographer || '';
-    paramsPanel.classList.add('open');
-    paramsPanel.setAttribute('aria-hidden','false');
-    document.body.classList.add('params-open');
-  }
-
-  function closeParams(){
-    paramsPanel.classList.remove('open');
-    paramsPanel.setAttribute('aria-hidden','true');
-    document.body.classList.remove('params-open');
-  }
-
-  // Save: copy params back to main inputs, state and active session then persist
-  async function saveParams(){
-    const valCollection = pCollection.value.trim();
-    const valClient = pClient.value.trim();
-    const valProject = pProject.value.trim();
-    const valPhotog = pPhotog.value.trim();
-
-    collectionTitleInput.value = valCollection;
-    clientNameInput.value = valClient;
-    projectTitleInput.value = valProject;
-    photographerNameInput.value = valPhotog;
-
-    state.client = valClient;
-    state.project = valProject;
-    state.photographer = valPhotog;
-
-    if(activeSessionId && sessions[activeSessionId]){
-      sessions[activeSessionId].name = valCollection;
-      sessions[activeSessionId].client = valClient;
-      sessions[activeSessionId].project = valProject;
-      sessions[activeSessionId].photographer = valPhotog;
-      persistSession(sessions[activeSessionId]);
+    // Helper: open panel and populate values from current globals / inputs
+    function openParams(){
+      // populate from active session if available, otherwise from main inputs/state
+      const s = sessions[activeSessionId] || {};
+      pCollection.value = s.name || collectionTitleInput.value || '';
+      pClient.value = s.client || clientNameInput.value || state.client || '';
+      pProject.value = s.project || projectTitleInput.value || state.project || '';
+      pPhotog.value = s.photographer || photographerNameInput.value || state.photographer || '';
+      paramsPanel.classList.add('open');
+      paramsPanel.setAttribute('aria-hidden','false');
+      document.body.classList.add('params-open');
     }
 
-    closeParams();
-  }
-
-  if(paramsToggle) paramsToggle.addEventListener('click', ()=> {
-    const open = paramsPanel.classList.contains('open');
-    if(open) closeParams(); else openParams();
-  });
-  if(paramsClose) paramsClose.addEventListener('click', closeParams);
-  if(paramsSave) paramsSave.addEventListener('click', saveParams);
-
-  // Keep main inputs synced to state when edited (so panel picks up live values)
-  clientNameInput.addEventListener('input', ()=> state.client = clientNameInput.value.trim());
-  projectTitleInput.addEventListener('input', ()=> state.project = projectTitleInput.value.trim());
-  photographerNameInput.addEventListener('input', ()=> state.photographer = photographerNameInput.value.trim());
-  collectionTitleInput.addEventListener('input', ()=> {
-    if(activeSessionId && sessions[activeSessionId]) {
-      sessions[activeSessionId].name = collectionTitleInput.value.trim();
-      persistSession(sessions[activeSessionId]);
+    function closeParams(){
+      paramsPanel.classList.remove('open');
+      paramsPanel.setAttribute('aria-hidden','true');
+      document.body.classList.remove('params-open');
     }
-  });
 
-  // close panel on Escape
-  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeParams(); });
-})();
+    // Save: copy params back to main inputs, state and active session then persist
+    async function saveParams(){
+      const valCollection = pCollection.value.trim();
+      const valClient = pClient.value.trim();
+      const valProject = pProject.value.trim();
+      const valPhotog = pPhotog.value.trim();
+
+      collectionTitleInput.value = valCollection;
+      clientNameInput.value = valClient;
+      projectTitleInput.value = valProject;
+      photographerNameInput.value = valPhotog;
+
+      state.client = valClient;
+      state.project = valProject;
+      state.photographer = valPhotog;
+
+      if(activeSessionId && sessions[activeSessionId]){
+        sessions[activeSessionId].name = valCollection;
+        sessions[activeSessionId].client = valClient;
+        sessions[activeSessionId].project = valProject;
+        sessions[activeSessionId].photographer = valPhotog;
+        persistSession(sessions[activeSessionId]);
+      }
+
+      closeParams();
+    }
+
+    if(paramsToggle) paramsToggle.addEventListener('click', ()=> {
+      const open = paramsPanel.classList.contains('open');
+      if(open) closeParams(); else openParams();
+    });
+    if(paramsClose) paramsClose.addEventListener('click', closeParams);
+    if(paramsSave) paramsSave.addEventListener('click', saveParams);
+
+    // Keep main inputs synced to state when edited (so panel picks up live values)
+    clientNameInput.addEventListener('input', ()=> state.client = clientNameInput.value.trim());
+    projectTitleInput.addEventListener('input', ()=> state.project = projectTitleInput.value.trim());
+    photographerNameInput.addEventListener('input', ()=> state.photographer = photographerNameInput.value.trim());
+    collectionTitleInput.addEventListener('input', ()=> {
+      if(activeSessionId && sessions[activeSessionId]) {
+        sessions[activeSessionId].name = collectionTitleInput.value.trim();
+        persistSession(sessions[activeSessionId]);
+      }
+    });
+
+    // close panel on Escape
+    document.addEventListener('keydown', e => { if(e.key === 'Escape') closeParams(); });
+  })();
 </script>
 
 <script>
@@ -1544,7 +1434,7 @@ async function loadSessionToGlobals(id) {
       try { ctx.drawImage(img, 0, 0); } catch (e) {}
       item._preview = c;
     }
-  }
+   }
 
   renderGallery();
   renderSessions(); // update sidebar UI
@@ -1768,4 +1658,6 @@ collectionTitleInput.addEventListener('input', () => {
     dm && dm.addEventListener && dm.addEventListener('change', updateInstallStatus);
   } catch (_) {}
 </script>
+</body>
+</html>
 
