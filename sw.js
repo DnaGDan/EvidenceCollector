@@ -1,8 +1,8 @@
 // Service worker for Evidence Collector PWA - simple precache + runtime cache (stale-while-revalidate)
-const CACHE_NAME = 'evidencecam-v2.0';
+const CACHE_NAME = 'evidencecam';
 const PRECACHE_ASSETS = [
   './',
-  './evidence_pwa_v2_0.html',
+  './evidence_pwa.html',
   './manifest.webmanifest',
   './sw.js',
   'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js',
@@ -38,7 +38,7 @@ self.addEventListener('fetch', event => {
         const copy = res.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
         return res;
-      }).catch(() => caches.match('./evidence_pwa_v2_0.html'))
+      }).catch(() => caches.match('./evidence_pwa.html'))
     );
     return;
   }
@@ -54,3 +54,4 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
