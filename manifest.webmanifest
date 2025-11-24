@@ -1,7 +1,7 @@
 {
   "name": "Site Evidence Capture",
   "short_name": "EvidenceCam",
-  "start_url": "./evidence_pwa_v2_0.html",
+  "start_url": "./evidence_pwa.html",
   "scope": "./",
   "id": "evidencecam",
   "display": "standalone",
@@ -13,3 +13,4 @@
     { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }
+
